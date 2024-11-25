@@ -94,9 +94,9 @@ const [activeLevelsX4, setActiveLevelsX4] = useState<boolean[]>(Array(12).fill(f
   // Fetch team size data after fetching the user address
   useEffect(() => {
     const fetchTeamSize = async () => {
-      if (userAddress) {
+      if (userWalletAddress && userWalletAddress !== 'null') {
         try {
-          const fetchedTeamSize = await getTeamSizeData(userAddress);
+          const fetchedTeamSize = await getTeamSizeData(userWalletAddress || "null");
           setTeamSize(fetchedTeamSize?.toString() || '0'); // Fallback to 0 if data is unavailable
         } catch (error) {
           console.error("Error fetching team size data:", error);
@@ -106,12 +106,12 @@ const [activeLevelsX4, setActiveLevelsX4] = useState<boolean[]>(Array(12).fill(f
     };
 
     fetchTeamSize();
-  }, [userAddress, getTeamSizeData]);
+  }, [userWalletAddress, getTeamSizeData]);
 
   // Fetch user data
   const handleFetchUser = async () => {
     try {
-      const data = await users(userAddress);
+      const data = await users(userWalletAddress || "null");
       if (data) {
         setUserData(data);
         setError(null); // Clear error if successful
@@ -126,20 +126,20 @@ const [activeLevelsX4, setActiveLevelsX4] = useState<boolean[]>(Array(12).fill(f
     //cyccle data fetch in component in display that will be update
   // Fetch active levels based on wallet address
   useEffect(() => {
-    if (!userAddress) return; // Wait for the userAddress to be set
+    if (!userWalletAddress) return; // Wait for the userAddress to be set
 
     const fetchActiveLevels = async () => {
       setLoading(true); // Start loading
       try {
         // Fetch x3 levels for the current wallet address
         const levelsStatusX3 = await Promise.all(
-          Array.from({ length: 12 }, (_, index) => usersActiveX3Levels(userAddress, index + 1))
+          Array.from({ length: 12 }, (_, index) => usersActiveX3Levels(userWalletAddress, index + 1))
         );
         setActiveLevelsX3(levelsStatusX3.map(status => !!status)); // Set active levels for x3
 
         // Fetch x4 levels for the current wallet address
         const levelsStatusX4 = await Promise.all(
-          Array.from({ length: 12 }, (_, index) => usersActiveX4Levels(userAddress, index + 1))
+          Array.from({ length: 12 }, (_, index) => usersActiveX4Levels(userWalletAddress, index + 1))
         );
         setActiveLevelsX4(levelsStatusX4.map(status => !!status)); // Set active levels for x4
       } catch (error) {
@@ -150,7 +150,7 @@ const [activeLevelsX4, setActiveLevelsX4] = useState<boolean[]>(Array(12).fill(f
     };
 
     fetchActiveLevels();
-  }, [userAddress, usersActiveX3Levels, usersActiveX4Levels]);
+  }, [userWalletAddress, usersActiveX3Levels, usersActiveX4Levels]);
 
   const handleClick = (name: string) => {
     setActiveProgram(name);
@@ -163,14 +163,14 @@ useEffect(() => {
       // Fetch for matrix 1 (x3)
       const updatedCyclesX3 = await Promise.all(
         levels.map(async (level) => {
-          const cycles = await getTotalCycles(userAddress, 1, level.level); // Matrix 1 for x3
+          const cycles = await getTotalCycles(userWalletAddress||'null', 1, level.level); // Matrix 1 for x3
           return cycles;
         })
       );
 
       const updatedPartnersX3 = await Promise.all(
         levels.map(async (level) => {
-          const partnerCount = await getPartnerCount(userAddress, 1, level.level); // Matrix 1 for x3
+          const partnerCount = await getPartnerCount(userWalletAddress || 'null', 1, level.level); // Matrix 1 for x3
           return partnerCount || 0;
         })
       );
@@ -178,14 +178,14 @@ useEffect(() => {
       // Fetch for matrix 2 (x4)
       const updatedCyclesX4 = await Promise.all(
         levels.map(async (level) => {
-          const cycles = await getTotalCycles(userAddress, 2, level.level); // Matrix 2 for x4
+          const cycles = await getTotalCycles(userWalletAddress || 'null', 2, level.level); // Matrix 2 for x4
           return cycles;
         })
       );
 
       const updatedPartnersX4 = await Promise.all(
         levels.map(async (level) => {
-          const partnerCount = await getPartnerCount(userAddress, 2, level.level); // Matrix 2 for x4
+          const partnerCount = await getPartnerCount(userWalletAddress || 'null', 2, level.level); // Matrix 2 for x4
           return partnerCount || 0;
         })
       );
@@ -206,7 +206,7 @@ useEffect(() => {
       // Fetch partner data for matrix 1 (x3)
       const currentDataX3 = await Promise.all(
         levels.map(async (level) => {
-          const partnersInfo = await userX3Matrix(userAddress, level.level) as { [key: number]: any[] } | null; // Matrix 1 for x3
+          const partnersInfo = await userX3Matrix(userWalletAddress || 'null', level.level) as { [key: number]: any[] } | null; // Matrix 1 for x3
 
           if (partnersInfo && Array.isArray(partnersInfo[1])) {
             const partnerAddresses: string[] = partnersInfo[1];
@@ -235,15 +235,15 @@ useEffect(() => {
       // Fetch partner data for matrix 2 (x4)
       const currentDataX4 = await Promise.all(
         levels.map(async (level) => {
-          const partnersInfo = await userX3Matrix(userAddress, level.level) as { [key: number]: any[] } | null; // Matrix 2 for x4
+          const partnersInfo = await userX3Matrix(userWalletAddress || 'null', level.level) as { [key: number]: any[] } | null; // Matrix 2 for x4
 
           if (partnersInfo && Array.isArray(partnersInfo[1])) {
             const partnerAddresses = partnersInfo[1];
             const partnerCount = partnerAddresses.length;
             console.log("partnerCount (x4):" + partnerCount);
             const userIds = await Promise.all(
-              partnerAddresses.map(async (address) => {
-                const userId = await fetchUserIdByAddress(address);
+              partnerAddresses.map(async (userWalletAddress) => {
+                const userId = await fetchUserIdByAddress(userWalletAddress);
                 return userId;
               })
             );
@@ -273,7 +273,7 @@ useEffect(() => {
   };
 
   fetchCyclesAndPartnersData();
-}, [getTotalCycles, userX3Matrix, getPartnerCount, userAddress, users]);
+}, [getTotalCycles, userX3Matrix, getPartnerCount, userWalletAddress, users]);
 
 // Store all level TotalRevenue in DataTotalRevenue for both x3 and x4
 const DataTotalRevenueX3 = levels.map((level, index) => {
@@ -324,7 +324,7 @@ const userEarningsRatio = totalInvestment > 0
 
   useEffect(() => {
     handleFetchUser();
-  }, [userAddress, users]);
+  }, [userWalletAddress, users]);
 
   return (
     <div className="my-9 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full mx-auto text-center items-center">

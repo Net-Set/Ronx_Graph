@@ -1,10 +1,26 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
+import { promises as fs } from "fs";
+import path from "path";
+import { nanoid } from "nanoid"; // To generate unique file names
 
 export async function POST(req: Request) {
   try {
-    // Extract userWalletAddress and username from the request body
-    const { userWalletAddress, username } = await req.json();
+    // Parse the incoming request
+    const contentType = req.headers.get("content-type");
+
+    if (!contentType || !contentType.includes("multipart/form-data")) {
+      return NextResponse.json(
+        { error: "Request must be multipart/form-data" },
+        { status: 400 }
+      );
+    }
+
+    // Use FormData API to parse the request
+    const formData = await req.formData();
+    const userWalletAddress = formData.get("userWalletAddress") as string;
+    const username = formData.get("username") as string;
+    const profilePic = formData.get("profilePic") as File | null;
 
     // Validate input
     if (!userWalletAddress || !username) {
@@ -34,30 +50,45 @@ export async function POST(req: Request) {
       );
     }
 
-    // Update the user's username in the database
+    // Handle profile picture upload
+    let profilePicPath = user.profilePic; // Default to existing profilePic if no new one is uploaded
+    if (profilePic) {
+      const uploadsDir = path.join(process.cwd(), "public/uploads");
+      await fs.mkdir(uploadsDir, { recursive: true }); // Ensure the uploads directory exists
+
+      const fileExtension = profilePic.name.split(".").pop();
+      const fileName = `${nanoid()}.${fileExtension}`;
+      profilePicPath = `/uploads/${fileName}`;
+
+      // Save the file to the uploads directory
+      const fileBuffer = Buffer.from(await profilePic.arrayBuffer());
+      await fs.writeFile(path.join(uploadsDir, fileName), new Uint8Array(fileBuffer));
+    }
+
+    // Update the user's username and profile picture in the database
     const result = await db.collection("users").updateOne(
       { userWalletAddress }, // Identifying user by wallet address
-      { $set: { username } } // Only updating the username
+      { $set: { username, profilePic: profilePicPath } } // Updating username and profilePic
     );
 
     if (result.modifiedCount === 0) {
       return NextResponse.json(
-        { error: "No changes made. Username might already be the same." },
+        { error: "No changes made. Data might already be the same." },
         { status: 400 }
       );
     }
 
     // Return success message
     return NextResponse.json({
-      message: "Username updated successfully",
+      message: "Profile updated successfully",
+      profilePic: profilePicPath,
     });
 
   } catch (error: any) {
-    console.error("Error during update:", error.message); // Log only the error message for clarity
+    console.error("Error during update:", error.message); // Log the error message for debugging
 
-    // Return error response with a generic message
     return NextResponse.json(
-      { error: `An error occurred while updating the username: ${error.message}` },
+      { error: `An error occurred while updating the profile: ${error.message}` },
       { status: 500 }
     );
   }
