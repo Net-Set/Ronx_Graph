@@ -73,7 +73,7 @@ export default function WalletStatus() {
     try {
       // Check network ID
       const networkId = await web3.eth.net.getId();
-      const isNetworkConnected = [56, 97].includes(networkId);
+      const isNetworkConnected = [56, 97].includes(Number(networkId));
 
       // Fetch BNB balance
       const balanceBNB = await web3.eth.getBalance(address);
@@ -103,7 +103,7 @@ export default function WalletStatus() {
 
     try {
       const contract = new web3.eth.Contract(BUSD_ABI, BUSD_CONTRACT_ADDRESS);
-      const balance = await contract.methods.balanceOf(account).call();
+      const balance: string = await contract.methods.balanceOf(account).call();
       return parseFloat(web3.utils.fromWei(balance, 'ether'));
     } catch (error) {
       console.error('Error fetching BUSD balance:', error);

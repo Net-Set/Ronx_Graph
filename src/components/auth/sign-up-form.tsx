@@ -7,21 +7,22 @@ import { useRouter } from 'next/navigation';
 import WalletStatus from '@/components/walletstatus/walletstatus';
 import { useWallet } from '@/app/context/WalletContext';
 
-
 export default function SignUpForm() {
   const { walletAddress, balance } = useWallet();
   const router = useRouter();
 
-  // Initialize the form data with default UplineId of '1'
   const [formData, setFormData] = useState({
-    UplineId: '1',
+    UplineId: '1', // Default Upline ID
   });
 
   const [errors, setErrors] = useState({
     UplineId: '',
   });
 
-  // Function to validate the Upline ID field
+  const [uplineWallet, setUplineWallet] = useState<string | null>(null); // State to store fetched wallet address
+  const [isLoading, setIsLoading] = useState(false); // State for API loading
+
+  // Validate fields
   function validateField(name: string, value: string) {
     const newErrors = { ...errors };
 
@@ -42,8 +43,8 @@ export default function SignUpForm() {
     setErrors(newErrors);
   }
 
-  // Handle input changes and validate the field in real-time
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+  // Handle input changes and fetch wallet address if Upline ID is valid
+  async function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target;
 
     // Only allow numbers in the UplineId field
@@ -51,15 +52,37 @@ export default function SignUpForm() {
 
     setFormData({ ...formData, [name]: value });
     validateField(name, value);
+
+    // Fetch wallet address if the Upline ID is valid
+    if (name === 'UplineId' && /^\d+$/.test(value)) {
+      try {
+        setIsLoading(true);
+        const response = await fetch(`/page/api/idTowalletAddress?id=${value}`);
+        const data = await response.json();
+
+        if (response.ok) {
+          setUplineWallet(data.walletAddress); // Update wallet address state
+        } else {
+          setUplineWallet(null); // Clear wallet address if not found
+        }
+      } catch (error) {
+        console.error('Error fetching wallet address:', error);
+        setUplineWallet(null); // Handle fetch error
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      setUplineWallet(null); // Clear wallet address if input is invalid
+    }
   }
 
   // Handle form submission
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    // Check if there are no validation errors and the form is filled
+    // Check if there are no validation errors
     if (Object.values(errors).every((x) => x === '') && formData.UplineId) {
-      console.log('Form submitted:', formData);
+      console.log('Form submitted:', formData, 'Upline Wallet:', uplineWallet);
       router.push('/retro');
     }
   }
@@ -79,6 +102,21 @@ export default function SignUpForm() {
           />
           {errors.UplineId && (
             <p className="text-red-500 text-xs">{errors.UplineId}</p>
+          )}
+        </div>
+
+        {/* Display Upline Wallet Address */}
+        <div className="mt-2">
+          {isLoading ? (
+            <p className="text-sm text-gray-500">Fetching wallet address...</p>
+          ) : uplineWallet ? (
+            <p className="text-sm text-green-500">
+              Wallet Address: {uplineWallet}
+            </p>
+          ) : (
+            <p className="text-sm text-red-500">
+              {formData.UplineId ? 'No wallet address found' : ''}
+            </p>
           )}
         </div>
 
