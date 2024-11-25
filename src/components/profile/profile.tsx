@@ -6,6 +6,7 @@ import { useWallet } from '@/app/context/WalletContext';
 import { useSmartContract } from '@/components/SmartContract/SmartContractProvider';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPencilAlt } from '@fortawesome/free-solid-svg-icons';
+import { IconProp } from '@fortawesome/fontawesome-svg-core';
 import Avatar from '@/components/ui/avatar';
 // static data
 import { authorData } from '@/data/static/author';
@@ -174,9 +175,11 @@ export default function Profile() {
         />
       <div className="shrink-0 border-dashed border-gray-200 dark:border-gray-700 md:w-72 ltr:md:border-r md:ltr:pr-7 rtl:md:border-l md:rtl:pl-7 lg:ltr:pr-10 lg:rtl:pl-10">
         <div className="mx-auto mt-5 p-4 rounded-lg bg-white shadow-card dark:bg-light-dark md:mx-0 xl:mt-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">User Details       <button onClick={handleEditClick} className="text-gray-500 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">  <FontAwesomeIcon icon={faPencilAlt} />
-
-          </button></h3>
+         <h3> User Details: 
+          <button onClick={handleEditClick} className="text-gray-500 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+            <FontAwesomeIcon  icon={faPencilAlt as IconProp} />
+          </button>
+          </h3>
           <div className="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
             <p><strong>ID:</strong> {user?.userid}</p>
             <p><strong>Username:</strong> {user?.username}</p>

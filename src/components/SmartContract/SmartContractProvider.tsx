@@ -67,6 +67,9 @@ export const SmartContractProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!contract) return null;
     try {
       const signer = provider?.getSigner();
+      if (!signer) {
+        throw new Error("No signer available");
+      }
       const contractWithSigner = contract.connect(signer);
       const tx = await contractWithSigner[methodName](...params);
       await tx.wait();
