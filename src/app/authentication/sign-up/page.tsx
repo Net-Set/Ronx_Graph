@@ -1,3 +1,4 @@
+'use client'
 import React from 'react';
 import Logo from '@/components/ui/logo';
 import Image from '@/components/ui/image';
@@ -5,8 +6,7 @@ import SignUpForm from '@/components/auth/sign-up-form';
 import AnchorLink from '@/components/ui/links/anchor-link';
 import BitcoinImg from '@/assets/images/bit-coin.png';
 import GoogleIcon from '@/assets/images/google-icon.svg';
-
-import{Header} from '@/layouts/minimal/layout'
+import { Header } from '@/layouts/minimal/components/Header';
 
 import routes from '@/config/routes';
 
@@ -14,7 +14,7 @@ const SignUp: React.FC = () => {
   
   return (
     <>
-      <Header />
+    <Header/>
     <div className="flex flex-col lg:flex-row min-h-screen bg-[#0F172A] text-white">
       {/* Left section for registration form */}
       <div className="flex flex-col items-center justify-center w-full lg:w-3/5 p-8">

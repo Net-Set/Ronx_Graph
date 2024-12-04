@@ -1,3 +1,4 @@
+'use client'
 import { Suspense } from "react";
 import LevelSliderx3 from "@/components/LevelSlider/x3LevelSlider/x3LevelSlider";
 

@@ -17,7 +17,7 @@ type SizeNames = 'xl' | 'lg' | 'md' | 'sm' | 'xs';
 
 const sizes: Record<SizeNames, string[]> = {
   xl: [
-    'border-white border-[5px] h-24 w-24 sm:h-28 sm:w-28 md:h-32 md:w-32 3xl:h-40 3xl:w-40 3xl:border-8 shadow-large',
+    'border-white border-[5px] h-24 w-24 sm:h-28 sm:w-28 md:h-32 md:w-32 3xl:h-28 3xl:w-28 3xl:border-8 shadow-large',
   ],
   lg: ['border-whitebor der-4 h-20 w-20 lg:h-24 lg:w-24'],
   md: ['border-white h-10 w-10 drop-shadow-main border-3'],

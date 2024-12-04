@@ -7,6 +7,7 @@ import { ThemeProvider } from '@/app/shared/theme-provider';
 import WagmiConfig from '@/app/shared/wagmi-config';
 import { WalletProvider } from '@/app/context/WalletContext';
 import { SmartContractProvider } from '@/components/SmartContract/SmartContractProvider';
+import { WriteSmartContractProvider } from '@/components/SmartContract/WriteSmartContractProvider';
 // Import UI components
 import ModalsContainer from '@/components/modal-views/container';
 import DrawersContainer from '@/components/drawer-views/container';
@@ -48,6 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <WagmiConfig>
               {/* WalletProvider wraps SmartContractProvider to make them available globally */}
               <WalletProvider>
+                <WriteSmartContractProvider>
                 <SmartContractProvider>
                   {/* Settings and UI components */}
                   <SettingsButton />
@@ -60,6 +62,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   {/* Main content */}
                   {children}
                 </SmartContractProvider>
+                </WriteSmartContractProvider>
               </WalletProvider>
             </WagmiConfig>
           </ThemeProvider>
