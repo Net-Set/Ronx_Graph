@@ -53,35 +53,37 @@ const PartnerPage = () => {
   }, [staticAddress, users]); // Depend on address and users to re-fetch when they change
 
   return (
-    <div className="p-6 mx-auto my-8 bg-white bg-opacity-60 dark:bg-gray-800 dark:bg-opacity-60 rounded-lg shadow-lg">
-      <h2 className="text-2xl font-semibold mb-6 text-gray-800 dark:text-white">Partner Details</h2>
-      {loading ? (
-        <p className="text-xl text-gray-500 dark:text-gray-300">Loading...</p>
-      ) : (
-        <table className="min-w-full table-auto border-collapse border border-gray-300 dark:border-gray-700">
-          <thead>
-            <tr className="bg-gray-100 dark:bg-gray-700">
-              <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-white border-b">ID</th>
-              <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-white border-b">Wallet</th>
-              <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-white border-b">Registration Time</th>
-              <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-white border-b">Highest X3 Level</th>
-              <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-white border-b">Highest X6 Level</th>
+    <div className="container mx-auto  my-12 p-4 bg-white bg-opacity-80 dark:bg-gray-800 dark:bg-opacity-60 rounded-lg shadow-lg">
+  <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-8 text-center">Partner Details</h2>
+  {loading ? (
+    <p className="text-center text-lg text-gray-500 dark:text-gray-300">Loading...</p>
+  ) : (
+    <div className="overflow-x-auto">
+      <table className="w-full table-auto border-collapse border border-gray-300 dark:border-gray-700">
+        <thead>
+          <tr className="bg-gray-100 dark:bg-gray-700">
+            <th className="px-4 py-3 text-sm font-medium text-left text-gray-700 dark:text-white border-b">ID</th>
+            <th className="px-4 py-3 text-sm font-medium text-left text-gray-700 dark:text-white border-b">Wallet</th>
+            <th className="px-4 py-3 text-sm font-medium text-left text-gray-700 dark:text-white border-b">Registration Time</th>
+            <th className="px-4 py-3 text-sm font-medium text-left text-gray-700 dark:text-white border-b">Highest X3 Level</th>
+            <th className="px-4 py-3 text-sm font-medium text-left text-gray-700 dark:text-white border-b">Highest X6 Level</th>
+          </tr>
+        </thead>
+        <tbody>
+          {partners.map((partner, index) => (
+            <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-600">
+              <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 border-b">{partner.id}</td>
+              <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 border-b truncate max-w-xs">{partner.wallet}</td>
+              <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 border-b">{partner.timestamp}</td>
+              <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 border-b">{partner.levelX3}</td>
+              <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 border-b">{partner.levelX6}</td>
             </tr>
-          </thead>
-          <tbody>
-            {partners.map((partner, index) => (
-              <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-600">
-                <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border-b">{partner.id}</td>
-                <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border-b">{partner.wallet}</td>
-                <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border-b">{partner.timestamp}</td>
-                <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border-b">{partner.levelX3}</td>
-                <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border-b">{partner.levelX6}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+          ))}
+        </tbody>
+      </table>
     </div>
+  )}
+</div>
   );
 };
 

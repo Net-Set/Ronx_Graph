@@ -165,39 +165,63 @@ export default function Profile() {
   return (
     <div className="flex flex-col w-full pt-4 md:flex-row md:pt-10 lg:pt-12">
       {/* User Information Section */}
-      <Avatar
-          size="xl"
-          image={profileImage} // Dynamic profile image
-          alt="Author"
-          width={100}
-          height={100}
-          className="z-10 mx-auto -mt-12 dark:border-gray-500 sm:-mt-14 md:mx-0 md:-mt-16 xl:mx-0 3xl:-mt-20"
-        />
-      <div className="shrink-0 border-dashed border-gray-200 dark:border-gray-700 md:w-72 ltr:md:border-r md:ltr:pr-7 rtl:md:border-l md:rtl:pl-7 lg:ltr:pr-10 lg:rtl:pl-10">
-        <div className="mx-auto mt-5 p-4 rounded-lg bg-white shadow-card dark:bg-light-dark md:mx-0 xl:mt-6">
-         <h3> User Details: 
-          <button onClick={handleEditClick} className="text-gray-500 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-            <FontAwesomeIcon  icon={faPencilAlt as IconProp} />
-          </button>
-          </h3>
-          <div className="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
-            <p><strong>ID:</strong> {user?.userid}</p>
-            <p><strong>Username:</strong> {user?.username}</p>
-            <p><strong>Wallet Address:</strong> {user?.userWalletAddress ? `${user.userWalletAddress.slice(0, 20)}...` : "Not Available"}</p>
-          </div>
-          <div className="absolute top-2 right-2">
-            {/* Edit Icon */}
-            <button onClick={handleEditClick} className="text-gray-500 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">Edit
-              <i className="fas fa-pencil-alt"></i> {/* Font Awesome pencil icon */}
-            </button>
-          </div>
-        </div>
+      <div className="flex flex-col  items-center  gap-6">
+  {/* Avatar Section */}
+  <div className="flex-shrink-0 flex items-center justify-center">
+    <Avatar
+      size="xl"
+      image={profileImage} // Dynamic profile image
+      alt="Author"
+      width={100}
+      height={100}
+      className="z-10 mx-auto -mt-12 dark:border-gray-500 sm:-mt-14 md:-mt-16 xl:-mt-20"
+    />
+  </div>
+
+  {/* User Details Section */}
+  <div className="shrink-0 border-dashed border-gray-200 dark:border-gray-700 md:w-72 ltr:md:border-r md:ltr:pr-7 rtl:md:border-l md:rtl:pl-7 lg:ltr:pr-10 lg:rtl:pl-10">
+    <div className="mx-auto mt-5 p-4 rounded-lg bg-white shadow-card dark:bg-light-dark md:mx-0 xl:mt-6">
+      <h3>
+        User Details:
+        <button
+          onClick={handleEditClick}
+          className="text-gray-500 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+        >
+          <FontAwesomeIcon icon={faPencilAlt as IconProp} />
+        </button>
+      </h3>
+      <div className="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
+        <p>
+          <strong>ID:</strong> {user?.userid}
+        </p>
+        <p>
+          <strong>Username:</strong> {user?.username}
+        </p>
+        <p>
+          <strong>Wallet Address:</strong>{" "}
+          {user?.userWalletAddress
+            ? `${user.userWalletAddress.slice(0, 20)}...`
+            : "Not Available"}
+        </p>
       </div>
+      <div className="absolute top-2 right-2">
+        <button
+          onClick={handleEditClick}
+          className="text-gray-500 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+        >
+          <i className="fas fa-pencil-alt"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 
       {/* Profile Details */}
       <div className="flex-1 space-y-6">
         {/* Personal Link Section */}
-        <div className="p-4 rounded-lg bg-[#182349] bg-opacity-60 text-white">
+        <div className="p-4 rounded-2xl bg-[#182349] bg-opacity-60 text-white lg:ml-20 mt-4 ">
           <h4 className="text-xl font-semibold mb-2">Personal Link</h4>
           <a
             href={user?.personalLink || "#"}
@@ -217,7 +241,7 @@ export default function Profile() {
             height: "15vh",
           }}
         >
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 mt-12 lg:ml-20">
             <h4 className="text-xl font-semibold">Ronx Token</h4>
             <a
               href="https://RonX.io/b/pyffvf"

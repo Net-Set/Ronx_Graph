@@ -24,6 +24,7 @@ interface SmartContractContextType {
   getPlatformRecentActivity: ()=> Promise<number |null>;
   getUserIdsWalletaddress: (userid: number) => Promise<number | null>;
   getDetailedMatrixInfo: (userid: number, Matrix: number, Level: number) => Promise<number | null>;
+  registrationFor(useraddress: string, referrer: string): Promise<any | null>;
   provider: ethers.providers.JsonRpcProvider | null;
 }
 
@@ -69,6 +70,9 @@ export const SmartContractProvider: React.FC<{ children: React.ReactNode }> = ({
       const signer = provider?.getSigner();
       if (!signer) {
         throw new Error("No signer available");
+      }
+      if (!contract) {
+        throw new Error("Contract is not initialized");
       }
       const contractWithSigner = contract.connect(signer);
       const tx = await contractWithSigner[methodName](...params);
@@ -244,6 +248,45 @@ const getDetailedMatrixInfo = async (userId: number, Matrix: number, Level: numb
 
 };
 
+// Registration for user
+const registrationFor = async (userAddress: string, referrer: string) => {
+  if (!provider) {
+    console.error("No provider available");
+    return null;
+  }
+
+  try {
+    // Request accounts and check connection
+    await provider.send("eth_requestAccounts", []);
+    const accounts = await provider.listAccounts();
+    if (accounts.length === 0) {
+      throw new Error("No accounts found. Please connect a wallet.");
+    }
+
+    // Get signer
+    const signer = provider.getSigner();
+    console.log("Signer Address:", await signer.getAddress());
+    if(!contract) {
+      throw new Error("Contract is not initialized");
+    }
+    // Connect contract to signer
+    const contractWithSigner = contract.connect(signer);
+
+    // Define the payable value (adjust as needed)
+    const value = ethers.utils.parseEther("0.1");
+
+    // Call the registration function
+    const tx = await contractWithSigner.registration(userAddress, referrer, { value });
+    await tx.wait();
+
+    console.log("Registration successful:", tx);
+    return tx;
+  } catch (error) {
+    console.error("Error registering user:", error);
+    return null;
+  }
+};
+
 
   return (
     <SmartContractContext.Provider
@@ -262,6 +305,7 @@ const getDetailedMatrixInfo = async (userId: number, Matrix: number, Level: numb
         getUserIdsWalletaddress,
         getTeamSizeData,
         getDetailedMatrixInfo,
+        registrationFor,
         provider,
       }}
     >

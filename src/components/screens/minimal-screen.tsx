@@ -10,6 +10,7 @@ import PlatformRecentActivity from '@/components/ui/platformrecentactivity';
 import { useBreakpoint } from '@/lib/hooks/use-breakpoint';
 import Image from '@/components/ui/image';
 import BusdBanner from '@/assets/images/BannerBUSD.png';
+import { Header } from '@/layouts/minimal/components/Header'; 
 
 interface Breakpoint {
   breakpoint: string;
@@ -40,6 +41,7 @@ export default function MinimalScreen() {
 
   return (
     <>
+    <Header />
       <div
         className="relative w-5/6 mx-auto h-60 bg-cover bg-center rounded-xl"
         style={{

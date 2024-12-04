@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useSmartContract } from '@/components/SmartContract/SmartContractProvider';
+import {useSmartContract}  from '@/components/SmartContract/SmartContractProvider';
+
 import { useWallet } from '@/app/context/WalletContext';
 
 interface StatCardProps {

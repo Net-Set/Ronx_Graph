@@ -3,7 +3,7 @@ import AnchorLink from '@/components/ui/links/anchor-link';
 import { useIsMounted } from '@/lib/hooks/use-is-mounted';
 import { useIsDarkMode } from '@/lib/hooks/use-is-dark-mode';
 import lightLogo from '@/assets/images/menu.svg';
-import darkLogo from '@/assets/images/menu-dark.svg';
+import darkLogo from '@/assets/images/menu-dark.ico';
 
 const Logo: React.FC<React.SVGAttributes<{}>> = (props) => {
   const isMounted = useIsMounted();

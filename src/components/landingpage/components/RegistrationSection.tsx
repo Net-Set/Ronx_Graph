@@ -1,18 +1,17 @@
 import React from 'react';
+import { useRouter } from 'next/navigation';
+
 
 import Image from '@/components/ui/image';
-
+import AuthSignup from '@/app/authentication/sign-up/page';
 import darkLogo from '@/assets/images/logo-white.svg';
 interface RegistrationSectionProps {
   onClose: () => void;
 }
 
 const RegistrationSection: React.FC<RegistrationSectionProps> = ({ onClose }) => {
-  
-  const handleRegisterBUSD = () => {
-    window.location.href = 'http://localhost:3000/authentication/sign-up'; // Replace with your desired URL
-  };
-  
+  const router = useRouter();
+
   return (
     <div className="m-1000 fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50">
       <div className="m-100 bg-gray-900 text-white p-8 rounded-lg  w-200 mx-4 md:mx-auto text-center relative">
@@ -43,7 +42,7 @@ const RegistrationSection: React.FC<RegistrationSectionProps> = ({ onClose }) =>
             <ul className="mb-4 text-left">
               <li>Due to the stable price, it is difficult to make money on growth</li>
             </ul>
-            <button className="mt-4 bg-indigo-500 text-white py-2 px-4 rounded" onClick={handleRegisterBUSD}>
+            <button className="mt-4 bg-indigo-500 text-white py-2 px-4 rounded"  onClick={() => router.push('/authentication/sign-up')}>
               Register BUSD
             </button>          </div>
 

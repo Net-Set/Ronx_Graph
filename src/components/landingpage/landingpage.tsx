@@ -23,7 +23,7 @@ export default function LandingPage() {
 
     return (
         <div className="App">
-            <Header onRegistrationClick={handleRegistrationClick} />
+           <Header onRegistrationClick={handleRegistrationClick} /> 
             <SmartContractComponent />
     
             {/* Conditionally render the registration section */}
