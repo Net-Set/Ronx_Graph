@@ -52,7 +52,7 @@ export default function SwapComponent({ onClose }: SwapComponentProps) {
     try {
       const amountsOut = await routerContract.methods.getAmountsOut(amountIn, path).call();
       console.log('Amounts Out:', amountsOut);
-      const estimatedBUSD = web3.utils.fromWei(amountsOut[1], 'ether');
+      const estimatedBUSD = web3.utils.fromWei((amountsOut as string[])[1], 'ether');
       console.log('Estimated BUSD:', estimatedBUSD);
       setEstimatedBUSD(estimatedBUSD);
     } catch (error) {
@@ -99,7 +99,7 @@ export default function SwapComponent({ onClose }: SwapComponentProps) {
       // Execute the swap
       const tx = await routerContract.methods
         .swapExactETHForTokensSupportingFeeOnTransferTokens(0, path, walletAddress, deadline)
-        .send({ from: walletAddress, value, gas: gasEstimate });
+        .send({ from: walletAddress, value, gas: gasEstimate.toString() });
 
       console.log('Swap successful:', tx);
       alert('Swap successful!');

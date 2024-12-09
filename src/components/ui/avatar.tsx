@@ -36,8 +36,8 @@ function Avatar({
   className,
   size = 'md',
   shape = 'circle',
-  width,
-  height,
+  width = 100,
+  height = 100,
 }: AvatarProps) {
   const sizeClassNames = sizes[size];
   return (

@@ -4,9 +4,9 @@ import Logo from '@/components/ui/logo';
 import Image from '@/components/ui/image';
 import SignUpForm from '@/components/auth/sign-up-form';
 import AnchorLink from '@/components/ui/links/anchor-link';
-import BitcoinImg from '@/assets/images/bit-coin.png';
+import BitcoinImg from '@/assets/images/Login Section Image.jpg';
 import GoogleIcon from '@/assets/images/google-icon.svg';
-import { Header } from '@/layouts/minimal/components/Header';
+import { RetroHeader2 } from '@/layouts/header/header';
 
 import routes from '@/config/routes';
 
@@ -14,7 +14,7 @@ const SignUp: React.FC = () => {
   
   return (
     <>
-    <Header/>
+    <RetroHeader2/>
     <div className="flex flex-col lg:flex-row min-h-screen bg-[#0F172A] text-white">
       {/* Left section for registration form */}
       <div className="flex flex-col items-center justify-center w-full lg:w-3/5 p-8">
@@ -42,7 +42,7 @@ const SignUp: React.FC = () => {
           <div className="mt-4 text-center lg:text-left">
             <p className="text-sm text-gray-400">
               Already have an account?
-              <AnchorLink href={routes.signIn} className="ml-2 font-medium underline text-blue-500">
+              <AnchorLink href={routes.minimal} className="ml-2 font-medium underline text-blue-500">
                 Login
               </AnchorLink>
             </p>

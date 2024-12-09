@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { fetchPartnerData, Partner } from "@/components/parteners/smartcontract/smartcontract";
+import { fetchPartnerData , Partner } from "@/components/parteners/smartcontract/smartcontract";
 import { useWallet } from '@/app/context/WalletContext';
 import { useSmartContract } from '@/components/SmartContract/SmartContractProvider';
 

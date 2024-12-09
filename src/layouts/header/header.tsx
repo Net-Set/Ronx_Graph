@@ -1,8 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import LogoIcon from '@/components/ui/logo-icon';
+import ronx from '@/assets/images/logo-white.png';
 import { useWindowScroll } from '@/lib/hooks/use-window-scroll';
+
+
 import { FlashIcon } from '@/components/icons/flash';
 import Hamburger from '@/components/ui/hamburger';
 import ActiveLink from '@/components/ui/links/active-link';
@@ -76,6 +80,29 @@ export function RetroHeader({ className }: { className?: string }) {
         <HeaderRightArea />
       </div>
     </nav>
+  );
+}
+
+export function RetroHeader2({ className }: { className?: string }) {
+  const router = useRouter();
+  const isMounted = useIsMounted();
+  const { openDrawer } = useDrawer();
+  const windowScroll = useWindowScroll();
+
+  return (
+    <nav className=" fixed top-0 left-0 w-full z-50 bg-black text-white p-4 shadow-lg">
+  <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 3xl:px-10">
+    {/* Left: Logo */}
+        <Image src={ronx} alt="Ronx Icon" width={80} height={80} />
+        
+
+    {/* Right: Header Right Area */}
+    <div className="flex items-center">
+      <HeaderRightArea />
+    </div>
+  </div>
+</nav>
+
   );
 }
 

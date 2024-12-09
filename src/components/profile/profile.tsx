@@ -241,7 +241,7 @@ export default function Profile() {
             height: "15vh",
           }}
         >
-          <div className="flex items-center gap-4 mt-12 lg:ml-20">
+          <div className="flex items-center gap-4 mt-10 lg:ml-20">
             <h4 className="text-xl font-semibold">Ronx Token</h4>
             <a
               href="https://RonX.io/b/pyffvf"

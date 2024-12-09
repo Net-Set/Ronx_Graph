@@ -16,13 +16,62 @@ import AuthorImage from '@/assets/images/author.jpg';
 import ShapeImage from '@/assets/images/sidebar-shape.png';
 import { LAYOUT_OPTIONS } from '@/lib/constants';
 
-export default function Sidebar({ className }: { className?: string }) {
-  const { closeDrawer } = useDrawer();
-  const layoutOption = '';
-  const [username, setusername] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+import { useWallet } from '@/app/context/WalletContext';
+import { set } from 'lodash';
+import { useAuthor } from '@/app/context/AuthorContext';
 
+
+
+
+export default function Sidebar({ className }: { className?: string }) {
+  const { user, loading, error, refetchUser } = useAuthor();
+
+  const { closeDrawer } = useDrawer();
+  const walletAddress  = useWallet();
+  const address = useWallet();
+  console.log("address:", address);
+  // Access the `address` field within the object, or handle undefined
+  const staticAddress = walletAddress ? walletAddress.walletAddress : '';
+  const addressnew = staticAddress;
+    const layoutOption = '';
+  const [username, setusername] = useState<string | null>(null);
+
+  const [profileImage, setProfileImage] = useState<string | null>(null);  
+  const [userids, setuserids] = useState<string | null>(null);
+
+
+  //     // Fetch profile picture dynamically based on wallet address
+  // const fetchProfileImage = async () => {
+  //   if (!staticAddress) {
+  //     console.warn("Wallet address is not available.");
+  //     return;
+  //   }
+
+  //   try {
+  //     const response = await fetch(`/page/api/users?userWalletAddress=${staticAddress}`);
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       console.log("Fetched Profile Data:", data);
+  //       setUser(data);
+  //       // Ensure `profilePic` exists in the response
+  //       if (data.profilePic) {
+  //         setProfileImage(data.profilePic);
+     
+  //       } else {
+  //         console.warn("Profile picture not found in the response.");
+  //       }
+  //     } else {
+  //       console.error(`Failed to fetch profile picture. Status: ${response.status}`);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching profile image:", error);
+  //   }
+  // };
+
+  
+  // useEffect(() => {
+  //   fetchProfileImage();
+  // }, [staticAddress]);
 
 
   useEffect(() => {
@@ -90,20 +139,19 @@ export default function Sidebar({ className }: { className?: string }) {
       <div className="custom-scrollbar h-[calc(100%-98px)] overflow-hidden overflow-y-auto">
         <div className="px-6 pb-5 2xl:px-8">
           <AuthorCard
-            image={AuthorImage}
-            name={username || "Demo User"}
-            role="admin"
+            image={user?.profilePic || "/public/uploads/default_pic.jpg" }
+            name={user?.username || "Demo User"}
+            role={user?.userid || "User ID"}
           />
-
 
           <div className="mt-12">
             {retroMenu.map((item, index) => (
               <MenuItem
-                key={`retro-left-${index}`}
-                name={item.name}
-                href={item.href}
-                icon={item.icon}
-                dropdownItems={item.dropdownItems}
+          key={`retro-left-${index}`}
+          name={item.name}
+          href={item.href}
+          icon={item.icon}
+          dropdownItems={item.dropdownItems}
               />
             ))}
           </div>

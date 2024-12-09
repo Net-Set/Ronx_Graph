@@ -10,6 +10,7 @@ import { useDrawer } from '@/components/drawer-views/context';
 import { Close } from '@/components/icons/close';
 import { defaultMenuItems } from '@/layouts/sidebar/_menu-items';
 import { LAYOUT_OPTIONS } from '@/lib/constants';
+import {useAuthor } from '@/app/context/AuthorContext';
 //images
 import AuthorImage from '@/assets/images/author.jpg';
 import React from 'react';
@@ -25,6 +26,8 @@ export default function Sidebar({
   layoutOption = '',
   menuItems = defaultMenuItems,
 }: SidebarProps) {
+
+  const { user, loading, error, refetchUser } = useAuthor();
   const { closeDrawer } = useDrawer();
   const sideBarMenus = menuItems?.map((item) => ({
     name: item.name,
@@ -71,10 +74,10 @@ export default function Sidebar({
 
       <div className="custom-scrollbar h-[calc(100%-98px)] overflow-hidden overflow-y-auto">
         <div className="px-6 pb-5 2xl:px-8">
-          <AuthorCard
-            image={AuthorImage}
-            name="Cameron Williamson"
-            role="admin"
+        <AuthorCard
+            image={user?.profilePic || "/public/uploads/default_pic.jpg" }
+            name={user?.username || "Demo User"}
+            role={user?.userid || "User ID"}
           />
 
           <div className="mt-12">
