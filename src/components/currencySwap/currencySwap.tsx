@@ -6,14 +6,9 @@ import { useWallet } from '@/app/context/WalletContext';
 import Button from '@/components/ui/button/button';
 import Input from '@/components/ui/forms/input';
 import PANCAKE_ROUTER_ABI from '@/components/currencySwap/abi.json';
+import { WBNB_ADDRESS, BUSD_CONTRACT_ADDRESS, PANCAKE_ROUTER_ADDRESS } from '@/config/constants';
 declare let window: any;
 
-// PancakeSwap Router V2 (Testnet)
-const PANCAKE_ROUTER_ADDRESS = '0xD99D1c33F9fC3444f8101754aBC46c52416550D1';
-// BUSD Contract Address (Testnet)
-const BUSD_CONTRACT_ADDRESS = '0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee';
-// WBNB Contract Address (Testnet)
-const WBNB_ADDRESS = '0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd';
 
 
 
