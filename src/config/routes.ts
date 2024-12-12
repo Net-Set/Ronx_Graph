@@ -40,7 +40,7 @@ const routes = {
   Calculator: '/calculator',
   SmartTool: '/smarttool',
   Ideas: '/ideas',
-  PromoPDFS: '/promopdfs',
+  PromoPDFS: '/retro/promopdfs',
   Social: '/social',
   Marathon: '/marathon',
   Links: '/links',
@@ -48,7 +48,7 @@ const routes = {
   LandingPage: '/landingpage',
   homeminimal: '/minimal',
   Parteners: '/parteners',
-  NFTS: '/nfts',
+  NFTS: '/retro/nfts',
   Program: '/program',
   LevelSlider: '/levelslider',
 };

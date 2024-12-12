@@ -60,11 +60,11 @@ const Header: React.FC<HeaderProps> = ({ onRegistrationClick }) => {
       </Flex>
 
       {/* Stats Section */}
-      <Flex direction="column" align="center" className="space-y-2 lg:space-y-0 lg:space-x-4">
+      {/* <Flex direction="row" align="center" justifyContent={"center"} className="space-y-2 lg:space-y-0 lg:space-x-4">
         <Text color="white">Maximum</Text>
         <Text color="white">Accrual 5.12%</Text>
         <Text color="white">Annual Rate 5.05%</Text>
-      </Flex>
+      </Flex> */}
 
       {/* Wallet Connect Section */}
       <Flex direction="column" align="center">

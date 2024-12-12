@@ -1,15 +1,12 @@
 'use client';
+
 import { useState, useEffect } from 'react';
-import { useCopyToClipboard } from 'react-use';
-import userBanner from '@/assets/images/userBanner.png';
 import { useWallet } from '@/app/context/WalletContext';
-import { useSmartContract } from '@/components/SmartContract/SmartContractProvider';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPencilAlt } from '@fortawesome/free-solid-svg-icons';
-import { IconProp } from '@fortawesome/fontawesome-svg-core';
 import Avatar from '@/components/ui/avatar';
-// static data
-import { authorData } from '@/data/static/author';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPencilAlt, faCopy } from '@fortawesome/free-solid-svg-icons';
+import { IconProp } from '@fortawesome/fontawesome-svg-core';
+import userBanner from '@/assets/images/userBanner.png';
 
 interface User {
   _id: string;
@@ -18,228 +15,171 @@ interface User {
   profilePic: string;
   personalLink: string;
   username: string;
+  uplineId: number;
 }
 
 export default function Profile() {
-  const { users } = useSmartContract();
-  const walletAddress  = useWallet();
-  const address = useWallet();
-  console.log("address:", address);
-  // Access the `address` field within the object, or handle undefined
-  const staticAddress = walletAddress ? walletAddress.walletAddress : '';
-  const addressnew = staticAddress;
+  const walletContext = useWallet();
+  const walletAddress = walletContext?.walletAddress || '';
 
-  console.log("addressnew 1:", staticAddress);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [newUsername, setNewUsername] = useState<string | null>('');
-  const [newWalletAddress, setNewWalletAddress] = useState<string | null>('');
-  const [profilePic, setProfilePic] = useState<string | null>('');
+  const [newUsername, setNewUsername] = useState('');
+  const [profilePic, setProfilePic] = useState<string | null>(null);
 
-  const [profileImage, setProfileImage] = useState<string>("/uploads/profile-picture.png"); // Default image
-  const wallet = useWallet(); // Wallet context
-
-  // Handle Edit Button Click
-  const handleEditClick = () => {
-    setIsEditing(true);
-    if (user) {
-      setNewUsername(user.username); // Pre-fill fields with current data
-      setNewWalletAddress(user.userWalletAddress);
+  // Fetch user data by wallet address
+  async function fetchUserData(address: string) {
+    try {
+      const response = await fetch(`/page/api/users?userWalletAddress=${address}`);
+      if (response.ok) {
+        const userData = await response.json();
+        console.log('User data:', userData);
+        setUser(userData);
+        setLoading(false);
+      } else {
+        console.error('Failed to fetch user data:', response.status);
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
     }
-  };
+  }
 
-  // Close the Edit Popup
-  const handleClosePopup = () => {
-    setIsEditing(false);
-  };
-
-
+  // Handle file input for profile picture
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setProfilePic(reader.result as string);  // Set the image preview as a data URL
+        setProfilePic(reader.result as string);
       };
-      reader.readAsDataURL(file);  // Convert the file to a data URL for the preview
-    }
-  };
-  
-  // Fetch profile picture dynamically based on wallet address
-  const fetchProfileImage = async () => {
-    if (!staticAddress) {
-      console.warn("Wallet address is not available.");
-      return;
-    }
-
-    try {
-      const response = await fetch(`/page/api/walletToProfilepic?wallet=${staticAddress}`);
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Fetched Profile Data:", data);
-
-        // Ensure `profilePic` exists in the response
-        if (data.profilePic) {
-          setProfileImage(data.profilePic);
-        } else {
-          console.warn("Profile picture not found in the response.");
-        }
-      } else {
-        console.error(`Failed to fetch profile picture. Status: ${response.status}`);
-      }
-    } catch (error) {
-      console.error("Error fetching profile image:", error);
+      reader.readAsDataURL(file);
     }
   };
 
-  useEffect(() => {
-    fetchProfileImage();
-  }, [staticAddress]);
-  // Fetch User Data
-  async function fetchUserDataByUserId(staticAddress: string) {
-    try {
-      const response = await fetch(`/page/api/users?userWalletAddress=${staticAddress}`);
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);  // Update user data state
-        setLoading(false);
-      }
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-    }
-  }
-
-  useEffect(() => {
-    fetchUserDataByUserId(staticAddress || 'null');
-  }, [walletAddress]);
-
-
+  // Handle save changes
   const handleSaveChanges = async () => {
-    if (!newUsername || !newWalletAddress) {
-      console.error("Username or wallet address is missing");
+    if (!newUsername) {
+      console.error('Username is required');
       return;
     }
-  
-    // Prepare form data for the request
+
     const formData = new FormData();
-    formData.append("userWalletAddress", newWalletAddress);
-    formData.append("username", newUsername);
+    formData.append('username', newUsername);
     if (profilePic) {
       const blob = await fetch(profilePic).then((r) => r.blob());
-      formData.append("profilePic", blob, "profile.jpg");
+      formData.append('profilePic', blob, 'profile.jpg');
     }
-  
+
     try {
-      const response = await fetch("/page/api/update-profile", {
-        method: "POST",
-        body: formData, // Use form data for file upload
+      const response = await fetch('/page/api/update-profile', {
+        method: 'POST',
+        body: formData,
       });
-  
-      // Handle response
-      const contentType = response.headers.get("Content-Type");
-      if (contentType && contentType.includes("application/json")) {
+
+      if (response.ok) {
         const result = await response.json();
-        if (response.ok) {
-          console.log("Profile updated:", result.message);
-          setIsEditing(false);
-          fetchProfileImage();
-          fetchUserDataByUserId(newWalletAddress); // Refetch user data
-          // alert success
-          // alert("Profile updated successfully!");
-        } else {
-          console.error("Error updating profile:", result.error);
-        }
+        console.log('Profile updated:', result.message);
+        setIsEditing(false);
+        fetchUserData(walletAddress);
       } else {
-        console.error("Response is not JSON:", await response.text());
+        console.error('Error updating profile:', response.status);
       }
     } catch (error) {
-      console.error("Unexpected error while updating profile:", error);
+      console.error('Unexpected error while updating profile:', error);
     }
   };
-  
-  
+
+  // Copy wallet address to clipboard
+  const copyToClipboard = async (address: string) => {
+    try {
+      await navigator.clipboard.writeText(address);
+      alert('Wallet address copied to clipboard!');
+    } catch (err) {
+      console.error('Error copying wallet address:', err);
+      alert('Failed to copy wallet address.');
+    }
+  };
+
+  // Load user data on component mount
+  useEffect(() => {
+    if (walletAddress) {
+      fetchUserData(walletAddress);
+    }
+  }, [walletAddress]);
 
   if (loading) return <div>Loading...</div>;
 
   return (
     <div className="flex flex-col w-full pt-4 md:flex-row md:pt-10 lg:pt-12">
-      {/* User Information Section */}
-      <div className="flex flex-col  items-center  gap-6">
-  {/* Avatar Section */}
-  <div className="flex-shrink-0 flex items-center justify-center">
-    <Avatar
-      size="xl"
-      image={profileImage} // Dynamic profile image
-      alt="Author"
-      width={100}
-      height={100}
-      className="z-10 mx-auto -mt-12 dark:border-gray-500 sm:-mt-14 md:-mt-16 xl:-mt-20"
-    />
-  </div>
+      {/* User Information */}
+      <div className="flex flex-col items-center gap-6">
+        <div className="flex-shrink-0 flex items-center justify-center">
+          <Avatar
+            size="xl"
+            image={user?.profilePic || '/uploads/profile-picture.png'}
+            alt="Author"
+            width={100}
+            height={100}
+            className="z-10 mx-auto -mt-12 dark:border-gray-500 sm:-mt-14 md:-mt-16 xl:-mt-20"
+          />
+        </div>
 
-  {/* User Details Section */}
-  <div className="shrink-0 border-dashed border-gray-200 dark:border-gray-700 md:w-72 ltr:md:border-r md:ltr:pr-7 rtl:md:border-l md:rtl:pl-7 lg:ltr:pr-10 lg:rtl:pl-10">
-    <div className="mx-auto mt-5 p-4 rounded-lg bg-white shadow-card dark:bg-light-dark md:mx-0 xl:mt-6">
-      <h3>
-        User Details:
-        <button
-          onClick={handleEditClick}
-          className="text-gray-500 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
-        >
-          <FontAwesomeIcon icon={faPencilAlt as IconProp} />
-        </button>
-      </h3>
-      <div className="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
-        <p>
-          <strong>ID:</strong> {user?.userid}
-        </p>
-        <p>
-          <strong>Username:</strong> {user?.username}
-        </p>
-        <p>
-          <strong>Wallet Address:</strong>{" "}
-          {user?.userWalletAddress
-            ? `${user.userWalletAddress.slice(0, 20)}...`
-            : "Not Available"}
-        </p>
+        <div className="shrink-0 border-dashed border-gray-200 dark:border-gray-700 md:w-72 ltr:md:border-r md:ltr:pr-7 rtl:md:border-l md:rtl:pl-7 lg:ltr:pr-10 lg:rtl:pl-10">
+          <div className="mx-auto mt-5 p-4 rounded-lg bg-white shadow-card dark:bg-light-dark md:mx-0 xl:mt-6">
+            <h3>
+              User Details:
+              <button
+                onClick={() => setIsEditing(true)}
+                className="text-gray-500 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+              >
+                <FontAwesomeIcon icon={faPencilAlt as IconProp} />
+              </button>
+            </h3>
+            <div className="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
+              <p><strong>ID:</strong> {user?.userid}</p>
+              <p><strong>Username:</strong> {user?.username}</p>
+              <p>
+                <strong>Wallet Address:</strong> 
+                {user?.userWalletAddress ? (
+                  <>
+                    {`${user.userWalletAddress.slice(0, 6)}...${user.userWalletAddress.slice(-4)}`}
+                    <button
+                      onClick={() => copyToClipboard(user.userWalletAddress)}
+                      className="ml-2 text-blue-600 hover:text-blue-800"
+                    >
+                      <FontAwesomeIcon icon={faCopy as IconProp} />
+                    </button>
+                  </>
+                ) : (
+                  'Not Available'
+                )}
+              </p>
+              <p>
+                <strong>Upline Address:</strong> {user?.uplineId}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
-      <div className="absolute top-2 right-2">
-        <button
-          onClick={handleEditClick}
-          className="text-gray-500 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
-        >
-          <i className="fas fa-pencil-alt"></i>
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-
 
       {/* Profile Details */}
       <div className="flex-1 space-y-6">
-        {/* Personal Link Section */}
-        <div className="p-4 rounded-2xl bg-[#182349] bg-opacity-60 text-white lg:ml-20 mt-4 ">
+        <div className="p-4 rounded-2xl bg-[#182349] bg-opacity-60 text-white lg:ml-20 mt-4">
           <h4 className="text-xl font-semibold mb-2">Personal Link</h4>
           <a
-            href={user?.personalLink || "#"}
+            href={user?.personalLink || '#'}
             target="_blank"
             rel="noopener noreferrer"
             className="text-lg underline"
           >
-            {user?.personalLink || "No Personal Link"}
+            {user?.personalLink || 'No Personal Link'}
           </a>
         </div>
 
-        {/* Banner Section */}
         <div
           className="p-4 rounded-lg bg-cover bg-center text-white"
-          style={{
-            backgroundImage: `url(${userBanner.src})`,
-            height: "15vh",
-          }}
+          style={{ backgroundImage: `url(${userBanner.src})`, height: '15vh' }}
         >
           <div className="flex items-center gap-4 mt-10 lg:ml-20">
             <h4 className="text-xl font-semibold">Ronx Token</h4>
@@ -257,73 +197,53 @@ export default function Profile() {
 
       {/* Edit Popup */}
       {isEditing && (
-  <div className="fixed inset-0  bg-opacity-70 flex justify-center items-center z-50">
-    <div className="bg-[#182349] p-6 rounded-lg shadow-lg w-96">
-      <h4 className="text-lg font-semibold mb-4 text-white">Edit User Information</h4>
+        <div className="fixed inset-0 bg-opacity-70 flex justify-center items-center z-50">
+          <div className="bg-[#182349] p-6 rounded-lg shadow-lg w-96">
+            <h4 className="text-lg font-semibold mb-4 text-white">Edit User Information</h4>
+            <div className="mb-4">
+              <label htmlFor="username" className="block text-sm text-gray-300">Username</label>
+              <input
+                type="text"
+                id="username"
+                value={newUsername}
+                onChange={(e) => setNewUsername(e.target.value)}
+                className="w-full p-2 mt-2 border border-blue-400 rounded-md text-gray-300 bg-blue-800"
+              />
+            </div>
 
-      {/* User ID */}
-      <div className="mb-4">
-        <label htmlFor="userid" className="block text-sm text-gray-300">User ID</label>
-        <input
-          type="text"
-          id="userid"
-          value={user?.userid || ''}
-          readOnly
-          className="w-full p-2 mt-2 border border-blue-400 rounded-md text-gray-300 bg-blue-800"
-        />
-      </div>
+            <div className="mb-4">
+              <label htmlFor="profilePic" className="block text-sm text-gray-300">Profile Picture</label>
+              <input
+                type="file"
+                id="profilePic"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="w-full p-2 mt-2 border border-blue-400 rounded-md text-gray-300 bg-blue-800"
+              />
+              {profilePic && (
+                <div className="mt-2">
+                  <img src={profilePic} alt="Profile Preview" className="w-24 h-24 object-cover rounded-full border-4 border-blue-600" />
+                </div>
+              )}
+            </div>
 
-      {/* Username Input */}
-      <div className="mb-4">
-        <label htmlFor="username" className="block text-sm text-gray-300">Username</label>
-        <input
-          type="text"
-          id="username"
-          value={newUsername || ''}
-          onChange={(e) => setNewUsername(e.target.value)}
-          className="w-full p-2 mt-2 border border-blue-400 rounded-md text-gray-300 bg-blue-800"
-        />
-      </div>
-
-      {/* Wallet Address Input */}
-      <div className="mb-4">
-        <label htmlFor="walletAddress" className="block text-sm text-gray-300">Wallet Address</label>
-        <input
-          type="text"
-          id="walletAddress"
-          value={newWalletAddress || ''}
-          readOnly
-          className="w-full p-2 mt-2 border border-blue-400 rounded-md text-gray-300 bg-blue-800"
-        />
-      </div>
-
-      {/* Profile Picture Input */}
-      <div className="mb-4">
-        <label htmlFor="profilePic" className="block text-sm text-gray-300">Profile Picture</label>
-        <input
-          type="file"
-          id="profilePic"
-          accept="image/*"
-          onChange={(e) => handleFileChange(e)}
-          className="w-full p-2 mt-2 border border-blue-400 rounded-md text-gray-300 bg-blue-800"
-        />
-        {/* Display the selected image preview */}
-        {profilePic && (
-          <div className="mt-2">
-            <img src={profilePic} alt="Profile Preview" className="w-24 h-24 object-cover rounded-full border-4 border-blue-600" />
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setIsEditing(false)}
+                className="px-4 py-2 bg-blue-700 rounded-md hover:bg-blue-600 text-white"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveChanges}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500"
+              >
+                Save
+              </button>
+            </div>
           </div>
-        )}
-      </div>
-
-      <div className="flex justify-end space-x-4">
-        <button onClick={handleClosePopup} className="px-4 py-2 bg-blue-700 rounded-md hover:bg-blue-600 text-white">Cancel</button>
-        <button onClick={handleSaveChanges} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500">Save</button>
-      </div>
-    </div>
-  </div>
-)}
-
-
+        </div>
+      )}
     </div>
   );
 }
