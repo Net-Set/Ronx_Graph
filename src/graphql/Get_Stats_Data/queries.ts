@@ -1,4 +1,8 @@
 import {gql} from'@apollo/client';
+
+
+
+
 export const GET_STATS_DATA = gql`
 query MyQuery($walletAddress: String!) {
   newUserPlaces(

@@ -78,7 +78,7 @@ const HeroSection: React.FC = () => {
               </div>
             </div>
             <a href="#start-learning" className="text-purple-500 hover:underline">
-              Start learning →
+              <a href="/documentation" target='_blank'> Start learning →</a>
             </a>
           </div>
         </div>
