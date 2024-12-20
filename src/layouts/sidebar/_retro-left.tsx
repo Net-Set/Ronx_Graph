@@ -21,7 +21,11 @@ import { set } from 'lodash';
 import { useAuthor } from '@/app/context/AuthorContext';
 
 
-
+interface User {  
+  profilePic: string;
+  username: string;
+  userid: string;
+}
 
 export default function Sidebar({ className }: { className?: string }) {
   const { user, loading, error, refetchUser } = useAuthor();
@@ -33,11 +37,20 @@ export default function Sidebar({ className }: { className?: string }) {
   // Access the `address` field within the object, or handle undefined
   const staticAddress = walletAddress ? walletAddress.walletAddress : '';
   const addressnew = staticAddress;
+
     const layoutOption = '';
   const [username, setusername] = useState<string | null>(null);
 
   const [profileImage, setProfileImage] = useState<string | null>(null);  
   const [userids, setuserids] = useState<string | null>(null);
+
+  useEffect(() => {
+    if(user!==null){
+      setProfileImage(user.profilePic);
+      setusername(user.username);
+      setuserids(user.userid);
+    } 
+  }, [user]);
 
 
   //     // Fetch profile picture dynamically based on wallet address
@@ -139,9 +152,9 @@ export default function Sidebar({ className }: { className?: string }) {
       <div className="custom-scrollbar h-[calc(100%-98px)] overflow-hidden overflow-y-auto">
         <div className="px-6 pb-5 2xl:px-8">
           <AuthorCard
-            image={user?.profilePic || "/public/uploads/default_pic.jpg" }
-            name={user?.username || "Demo User"}
-            role={user?.userid || "User ID"}
+            image={profileImage || "/public/uploads/default_pic.jpg" }
+            name={username || "Demo User"}
+            role={userids || "User ID"}
           />
 
           <div className="mt-12">

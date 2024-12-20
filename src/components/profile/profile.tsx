@@ -114,7 +114,7 @@ export default function Profile() {
     <div className="flex flex-col w-full pt-4 md:flex-row md:pt-10 lg:pt-12">
       {/* User Information */}
       <div className="flex flex-col items-center gap-6">
-        <div className="flex-shrink-0 flex items-center justify-center">
+        <div className="flex-shrink-0 flex items-center justify-center z-0">
           <Avatar
             size="xl"
             image={user?.profilePic || '/uploads/profile-picture.png'}

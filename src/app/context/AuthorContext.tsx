@@ -20,13 +20,6 @@ interface AuthorContextType {
 
 const AuthorContext = createContext<AuthorContextType | undefined>(undefined);
 
-export const useAuthor = () => {
-  const context = useContext(AuthorContext);
-  if (!context) {
-    throw new Error('useAuthor must be used within an AuthorProvider');
-  }
-  return context;
-};
 
 export const AuthorProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -69,4 +62,14 @@ export const AuthorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       {children}
     </AuthorContext.Provider>
   );
+};
+
+
+
+export const useAuthor = () => {
+  const context = useContext(AuthorContext);
+  if (!context) {
+    throw new Error('useAuthor must be used within an AuthorProvider');
+  }
+  return context;
 };
