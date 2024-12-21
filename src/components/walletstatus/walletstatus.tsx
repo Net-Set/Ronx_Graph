@@ -16,7 +16,7 @@ interface WalletStatusProps {
   };
 }
 
-const BUSD_CONTRACT_ADDRESS = '0x...'; // Replace with your actual BUSD contract address
+const BUSD_CONTRACT_ADDRESS = '0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee'; // Replace with your actual BUSD contract address
 const BUSD_ABI = [
   {
     constant: true,
