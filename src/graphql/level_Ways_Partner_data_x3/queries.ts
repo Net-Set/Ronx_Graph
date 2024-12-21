@@ -12,3 +12,19 @@ export const x3Activelevelpartner = gql`
         }
     }
 `;
+
+
+
+// GraphQL query to get direct partners of a referrer
+export const GET_REGISTRATIONS = gql`
+  query GetRegistrations($referrer: String!) {
+    registrations(
+      where: { referrer: $referrer }
+      orderBy: blockTimestamp
+      orderDirection: asc
+    ) {
+      user
+      userId
+    }
+  }
+`;

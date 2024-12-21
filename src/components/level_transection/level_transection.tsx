@@ -10,12 +10,12 @@ import { useWallet } from '@/app/context/WalletContext';
 import Image from 'next/image';
 import Person from '@/assets/icons/profile.png';
 import Recycle from '@/assets/icons/recycle_icon.jpg';
+import { GET_WALLET_ADDRESS_TO_ID } from '@/graphql/WalletAddress_To_Id/queries';
 
 interface LevelTransectionProps {
   currentLevel: number;
   matrix: number; // Accept matrix as a prop
 }
-
 
 const levelDataX4 = [
   { level: 1, cost: 0.0001 },
@@ -32,9 +32,8 @@ const levelDataX4 = [
   { level: 12, cost: 0.2048 },
 ];
 
-
 interface MatrixDataRow {
-  user: string;
+  user: string; //this is user wallet address
   transactionHash: string;
   blockTimestamp: string;
   matrix: number;
@@ -42,12 +41,13 @@ interface MatrixDataRow {
   place: number;
 }
 
-function LevelTransection({ currentLevel, matrix }: LevelTransectionProps) {
+const LevelTransection: React.FC<{ currentLevel: number; matrix: number }> = ({ currentLevel, matrix }) => {
   const walletAddress = useWallet();
   const staticAddress = walletAddress ? walletAddress.walletAddress : null;
   const userWalletAddress = staticAddress;
 
   const [matrixData, setMatrixData] = useState<MatrixDataRow[]>([]);
+  const [userIds, setUserIds] = useState<Record<string, string>>({});
 
   // Fetch Transactions table data fetch using walletAddress matrix and level
   useEffect(() => {
@@ -67,6 +67,35 @@ function LevelTransection({ currentLevel, matrix }: LevelTransectionProps) {
     fetchTransactions();
   }, [userWalletAddress, matrix, currentLevel]);
 
+  useEffect(() => {
+    const fetchUserIds = async () => {
+      try {
+        const userIdResponses = await Promise.all(
+          matrixData.map((row) =>
+            client.query({
+              query: GET_WALLET_ADDRESS_TO_ID,
+              variables: { wallet: row.user },
+            })
+          )
+        );
+
+        const userIdsMap: Record<string, string> = {};
+        userIdResponses.forEach((response, index) => {
+          const userId = response.data.registrations[0]?.userId;
+          if (userId) {
+            userIdsMap[matrixData[index].user] = userId;
+          }
+        });
+
+        setUserIds(userIdsMap);
+      } catch (error) {
+        console.error('Error fetching user IDs:', error);
+      }
+    };
+
+    fetchUserIds();
+  }, [matrixData]);
+
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text).then(() => {
       alert('Copied to clipboard');
@@ -80,7 +109,9 @@ function LevelTransection({ currentLevel, matrix }: LevelTransectionProps) {
       <table className="min-w-full bg-[#1f2937] border border-gray-700 text-white">
         <thead>
           <tr className="bg-[#2c2f38]">
-              <th className="px-4 py-2 border-b border-gray-600">Type</th>
+            <th className="px-4 py-2 border-b border-gray-600">Type</th>
+            <th className="px-4 py-2 border-b border-gray-600">ID</th>
+
             <th className="px-4 py-2 border-b border-gray-600">User</th>
             <th className="px-4 py-2 border-b border-gray-600">Timestamp</th>
             <th className="px-4 py-2 border-b border-gray-600">Matrix</th>
@@ -91,22 +122,25 @@ function LevelTransection({ currentLevel, matrix }: LevelTransectionProps) {
         <tbody>
           {matrixData.map((row, index) => (
             <tr key={index} className="hover:bg-[#3a3f48]">
-                <td className="px-4 py-2 border-b border-gray-600" style={{ color: row.place === 3 ? 'green' : 'inherit' }}>
-                  {row.place === 3 ? (
+              <td className="px-4 py-2 border-b border-gray-600" style={{ color: row.place === 3 ? 'green' : 'inherit' }}>
+                {row.place === 3 ? (
                   <>
-                 <Image src={Recycle} alt="Recycle" width={20} height={20} />
+                    <Image src={Recycle} alt="Recycle" width={20} height={20} />
                   </>
-                  ) : (
+                ) : (
                   <Image src={Person} alt="Person" width={20} height={20} />
-                  )}
-                </td>
-              <td className="px-4 py-2 border-b border-gray-600">{row.user}        
-                 <button
-                onClick={() => handleCopy(row.transactionHash)}
-                className="ml-2 text-white hover:text-blue-700"
-              >
-                <CopyIcon />&nbsp;
-              </button>
+                )}
+              </td>
+              <td className="px-4 py-2 border-b border-gray-600">                {userIds[row.user] ? userIds[row.user] : 'Loading...'}
+              </td>
+              <td className="px-4 py-2 border-b border-gray-600">
+                {row.user}
+                <button
+                  onClick={() => handleCopy(row.user)}
+                  className="ml-2 text-white hover:text-blue-700"
+                >
+                  <CopyIcon />&nbsp;
+                </button>
                 <a
                   href={`https://testnet.bscscan.com/tx/${row.transactionHash}`}
                   target="_blank"
@@ -114,15 +148,13 @@ function LevelTransection({ currentLevel, matrix }: LevelTransectionProps) {
                   rel="noopener noreferrer"
                   className="text-blue-500 hover:text-blue-700"
                 >
-                   <ExternalLinkIcon />
+                  <ExternalLinkIcon />
                 </a>
               </td>
               <td className="px-4 py-2 border-b border-gray-600">{new Date(parseInt(row.blockTimestamp) * 1000).toLocaleString()}</td>
-              <td className="px-4 py-2 border-b border-gray-600">{matrix ===1?"x3":"x4"}</td>
+              <td className="px-4 py-2 border-b border-gray-600">{matrix === 1 ? "x3" : "x4"}</td>
               <td className="px-4 py-2 border-b border-gray-600">{row.level}</td>
-                <td className="px-4 py-2 border-b border-gray-600" style={{ color: row.place === 3 ? 'green' : 'inherit' }}>{row.place === 3 ? 'recycle': `${levelDataX4.find(level => level.level === row.level)?.cost} BNB`}</td>
-              
-
+              <td className="px-4 py-2 border-b border-gray-600" style={{ color: row.place === 3 ? 'green' : 'inherit' }}>{row.place === 3 ? 'recycle' : `${levelDataX4.find(level => level.level === row.level)?.cost} BNB`}</td>
             </tr>
           ))}
         </tbody>

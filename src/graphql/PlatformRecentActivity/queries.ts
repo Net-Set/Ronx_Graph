@@ -7,7 +7,7 @@ export const GET_USERS = gql`
     user
     userId
   }
-  upgrades(where: {}, orderBy: blockTimestamp, orderDirection: desc) {
+  upgrades(orderBy: blockTimestamp, orderDirection: desc) {
     level
     matrix
     referrer
