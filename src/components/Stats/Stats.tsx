@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
+import ApplyFilters from '@/components/filters/Fliter';
 import {
   useTable,
   useResizeColumns,
@@ -91,7 +92,8 @@ const COLUMNS: Column<TransactionData>[] = [
           rel="noopener noreferrer"
           className="text-blue-500 hover:text-blue-700 flex items-center"
         >
-            {value.slice(0, 6) + '.....' + value.slice(-8)}<ExternalLinkIcon className="ml-1" />
+          {value.slice(0, 6) + '.....' + value.slice(-8)}
+          <ExternalLinkIcon className="ml-1" />
         </a>
         <button
           onClick={() => navigator.clipboard.writeText(value)}
@@ -115,6 +117,26 @@ export default function StatsComponent() {
   const userWalletAddress = staticAddress;
   const [data, setData] = useState<TransactionData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    program: '',
+    level: '',
+    searchValue: ''
+  });
+  const [allData, setAllData] = useState<TransactionData[]>([]);
+
+  console.log('filters', filters);
+
+  interface Filters {
+    program: string;
+    level: string;
+    searchValue: string;
+  }
+
+  const handleApplyFilters = (newFilters: Filters) => {
+    setFilters(newFilters);
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -122,6 +144,7 @@ export default function StatsComponent() {
           query: GET_STATS_DATA,
           variables: { walletAddress: userWalletAddress },
         });
+        
         console.log('data', data);
         // Transform the data to match the required format
         const transformedData = data.newUserPlaces.map((item: any) => ({
@@ -137,6 +160,7 @@ export default function StatsComponent() {
           wallet: item.user,
           profit: levels.find(level => level.level === item.level)?.cost || 0,
         }));
+        setAllData(transformedData);
         setData(transformedData);
         setLoading(false);
       } catch (error) {
@@ -148,6 +172,21 @@ export default function StatsComponent() {
       fetchData();
     }
   }, [userWalletAddress]);
+
+  useEffect(() => {
+    let filteredData = allData;
+    if (filters.program) {
+      filteredData = filteredData.filter(item => item.program === (filters.program === '1' ? 'x3' : 'x4'));
+    }
+    if (filters.level) {
+      filteredData = filteredData.filter(item => item.level === parseInt(filters.level));
+    }
+    if (filters.searchValue) {
+      filteredData = filteredData.filter(item => item.wallet.includes(filters.searchValue));
+    }
+    setData(filteredData);
+  }, [filters, allData]);
+
   const columns = React.useMemo(() => COLUMNS, []);
   const {
     getTableProps,
@@ -177,11 +216,22 @@ export default function StatsComponent() {
     <div className="">
       <div className="rounded-tl-lg rounded-tr-lg bg-white px-4 pt-6 dark:bg-light-dark md:px-8 md:pt-8">
         <div className="flex flex-col items-center justify-between border-b border-dashed border-gray-200 pb-5 dark:border-gray-700 md:flex-row">
-          <h2 className="mb-3 shrink-0 text-lg font-medium uppercase text-black dark:text-green sm:text-xl md:mb-0 md:text-2xl bg-grey-500 text-white p-2 rounded-lg shadow-lg">
-     Stats
+          <h2 className="mb-3 shrink-0 text-lg font-medium dark:text-green sm:text-xl md:mb-0 md:text-2xl bg-grey-500 text-white p-2 rounded-lg shadow-lg">
+        Stats
           </h2>
+          <button
+            onClick={() => setShowFilters((prev) => !prev)}
+            className="ml-auto px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
+          >
+            Filters
+          </button>
         </div>
       </div>
+      {showFilters && (
+        <div className="p-4 bg-gray-100 dark:bg-gray-800">
+          <ApplyFilters onApplyFilters={handleApplyFilters} />
+        </div>
+      )}
       <div className="-mx-0.5 dark:[&_.os-scrollbar_.os-scrollbar-track_.os-scrollbar-handle:before]:!bg-white/50">
         <Scrollbar style={{ width: '100%' }} autoHide="never">
           <div className="px-0.5">
