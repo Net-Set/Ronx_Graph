@@ -36,7 +36,7 @@ export default function StatsFilters({ onApplyFilters }: StatsFiltersProps) {
                 <option value="" disabled>
                   Select program
                 </option>
-                <option value="">X3</option>
+                <option value="1">X3</option>
                 <option value="2">X4</option>
               </select>
             </div>

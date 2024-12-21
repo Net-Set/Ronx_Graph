@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import StatsFilters from '@/components/Stats/StatsFliter';
+import ApplyFilters from '@/components/filters/Fliter';
 import {
   useTable,
   useResizeColumns,
@@ -123,6 +123,7 @@ export default function StatsComponent() {
     level: '',
     searchValue: ''
   });
+  const [allData, setAllData] = useState<TransactionData[]>([]);
 
   console.log('filters', filters);
 
@@ -141,12 +142,7 @@ export default function StatsComponent() {
       try {
         const { data } = await client.query({
           query: GET_STATS_DATA,
-          variables: { 
-            walletAddress: userWalletAddress,
-            program: filters.program || null,
-            level: filters.level || null,
-            searchValue: filters.searchValue || null
-          },
+          variables: { walletAddress: userWalletAddress },
         });
         
         console.log('data', data);
@@ -164,6 +160,7 @@ export default function StatsComponent() {
           wallet: item.user,
           profit: levels.find(level => level.level === item.level)?.cost || 0,
         }));
+        setAllData(transformedData);
         setData(transformedData);
         setLoading(false);
       } catch (error) {
@@ -174,7 +171,21 @@ export default function StatsComponent() {
     if (userWalletAddress) {
       fetchData();
     }
-  }, [userWalletAddress, filters]);
+  }, [userWalletAddress]);
+
+  useEffect(() => {
+    let filteredData = allData;
+    if (filters.program) {
+      filteredData = filteredData.filter(item => item.program === (filters.program === '1' ? 'x3' : 'x4'));
+    }
+    if (filters.level) {
+      filteredData = filteredData.filter(item => item.level === parseInt(filters.level));
+    }
+    if (filters.searchValue) {
+      filteredData = filteredData.filter(item => item.wallet.includes(filters.searchValue));
+    }
+    setData(filteredData);
+  }, [filters, allData]);
 
   const columns = React.useMemo(() => COLUMNS, []);
   const {
@@ -218,7 +229,7 @@ export default function StatsComponent() {
       </div>
       {showFilters && (
         <div className="p-4 bg-gray-100 dark:bg-gray-800">
-          <StatsFilters onApplyFilters={handleApplyFilters} />
+          <ApplyFilters onApplyFilters={handleApplyFilters} />
         </div>
       )}
       <div className="-mx-0.5 dark:[&_.os-scrollbar_.os-scrollbar-track_.os-scrollbar-handle:before]:!bg-white/50">
