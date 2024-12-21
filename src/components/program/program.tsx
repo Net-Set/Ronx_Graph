@@ -103,12 +103,13 @@ const [currentPartnerX4, setcurrentPartnerX4] = useState<(number | null)[]>(Arra
           Array.from({ length: 12 }, (_, index) => usersActiveX3Levels(userAddress, index + 1))
         );
         setActiveLevelsX3(levelsStatusX3.map(status => !!status)); // Set active levels for x3
-
+        console.log("Active levels for x3:", levelsStatusX3);
         // Fetch x4 levels for the current wallet address
         const levelsStatusX4 = await Promise.all(
           Array.from({ length: 12 }, (_, index) => usersActiveX4Levels(userAddress, index + 1))
         );
         setActiveLevelsX4(levelsStatusX4.map(status => !!status)); // Set active levels for x4
+        console.log("Active levels for x4:", levelsStatusX4);
       } catch (error) {
         console.error('Error fetching active levels:', error);
       } finally {

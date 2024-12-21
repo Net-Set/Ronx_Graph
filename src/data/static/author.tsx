@@ -1,4 +1,4 @@
-import CoverImage from '@/assets/images/profile-cover.jpg';
+import CoverImage from '@/assets/images/bg_image.jpg';
 import AuthorImage from '@/assets/images/author.jpg';
 import { Instagram } from '@/components/icons/brands/instagram';
 import { Twitter } from '@/components/icons/brands/twitter';

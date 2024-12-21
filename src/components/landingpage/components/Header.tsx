@@ -16,7 +16,7 @@ const Header: React.FC<HeaderProps> = ({ onRegistrationClick }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [walletData, setWalletData] = useState({
     address: "",
-    balance: null,
+    balance: null as string | null,
   });
 
   const toggleMenu = () => {
@@ -48,7 +48,7 @@ const Header: React.FC<HeaderProps> = ({ onRegistrationClick }) => {
         className="space-x-4"
       >
         <Link href="#documentation" color="white" _hover={{ color: 'gray.400' }}>Documentation</Link>
-        <Link href={`/authentication`} color="white" _hover={{ color: 'gray.400' }}>Login</Link>
+        <Link href={`/minimal`} color="white" _hover={{ color: 'gray.400' }}>Login</Link>
         <Link
           href="#register"
           onClick={(e) => { e.preventDefault(); onRegistrationClick(); }}
@@ -60,11 +60,11 @@ const Header: React.FC<HeaderProps> = ({ onRegistrationClick }) => {
       </Flex>
 
       {/* Stats Section */}
-      <Flex direction="column" align="center" className="space-y-2 lg:space-y-0 lg:space-x-4">
+      {/* <Flex direction="row" align="center" justifyContent={"center"} className="space-y-2 lg:space-y-0 lg:space-x-4">
         <Text color="white">Maximum</Text>
         <Text color="white">Accrual 5.12%</Text>
         <Text color="white">Annual Rate 5.05%</Text>
-      </Flex>
+      </Flex> */}
 
       {/* Wallet Connect Section */}
       <Flex direction="column" align="center">

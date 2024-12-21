@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { fetchPartnerData, Partner } from "@/components/parteners/smartcontract/smartcontract";
+import { fetchPartnerData , Partner } from "@/components/parteners/smartcontract/smartcontract";
 import { useWallet } from '@/app/context/WalletContext';
 import { useSmartContract } from '@/components/SmartContract/SmartContractProvider';
 
@@ -43,6 +43,7 @@ const PartnerPage = () => {
         const data = await fetchPartnerData(userId); // Fetch partners data with the user ID
         setPartners(data);
         setLoading(false);
+        console.log("Partners data:", data);  
       } catch (error) {
         console.error("Error loading data:", error);
         setLoading(false);

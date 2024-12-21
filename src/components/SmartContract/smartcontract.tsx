@@ -5,9 +5,7 @@ import { ethers } from 'ethers';
 
 // Define the ABI of your smart contract
 import abi from './abi.json';
-
-const CONTRACT_ADDRESS = "0x6f4dc25CEb0581eDD1Cc5A982794AC021bFEa2a5";
-
+import { CONTRACT_ADDRESS } from '@/config/constants';
 export const useSmartContract = () => {
     const [provider, setProvider] = useState<ethers.providers.Web3Provider | null>(null);
     const [contract, setContract] = useState<ethers.Contract | null>(null);

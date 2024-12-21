@@ -36,8 +36,9 @@ function Avatar({
   className,
   size = 'md',
   shape = 'circle',
-  width,
-  height,
+  //Difine the default width and height of user avatar
+  width = 100,
+  height = 100,
 }: AvatarProps) {
   const sizeClassNames = sizes[size];
   return (
