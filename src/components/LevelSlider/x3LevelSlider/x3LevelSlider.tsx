@@ -1,292 +1,216 @@
 'use client'; // Ensure client-side rendering
 
-import React, { useEffect, useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation'; // Import useSearchParams to access URL parameters
-import LevelHeader from '@/components/levelheader/x3levelheader/x3levelheader';
-import TransactionTable from '@/components/transaction/transaction-table';
-import NotifyBot from '@/components/notifybot/notifybot';
-import { useSmartContract } from '@/components/SmartContract/SmartContractProvider'; // Import the contract context
-import LevelTransection from '@/components/level_transection/level_transection';
+import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useWallet } from '@/app/context/WalletContext';
+import LevelHeader from '@/components/levelheader/x3levelheader/x3levelheader';
+import NotifyBot from '@/components/notifybot/notifybot';
+import LevelTransection from '@/components/level_transection/level_transection';
+import client from '@/lib/apolloClient';
+import { ApolloQueryResult } from '@apollo/client';
+import { getUserPlacesQuery } from '@/graphql/Grixdx3Level_Partner_and_Cycle_Count_and_Active_Level/queries';
+import { x3Activelevelpartner, GET_REGISTRATIONS } from '@/graphql/level_Ways_Partner_data_x3/queries';
+import { GET_WALLET_ADDRESS_TO_ID } from '@/graphql/WalletAddress_To_Id/queries';
+import { GET_WALLET_ADDRESS_TO_UPLINE_ID } from '@/graphql/WalletAddress_To_UplineId/queries';
 
 
 const levels = [
-  { level: 1, cost: 5 },
-  { level: 2, cost: 10 },
-  { level: 3, cost: 20 },
-  { level: 4, cost: 40 },
-  { level: 5, cost: 80 },
-  { level: 6, cost: 160 },
-  { level: 7, cost: 320 },
-  { level: 8, cost: 640 },
-  { level: 9, cost: 1250 },
-  { level: 10, cost: 2500 },
-  { level: 11, cost: 5000 },
-  { level: 12, cost: 9900 },
+  { level: 1, cost: 0.0001 },
+  { level: 2, cost: 0.0002 },
+  { level: 3, cost: 0.0004 },
+  { level: 4, cost: 0.0008 },
+  { level: 5, cost: 0.0016 },
+  { level: 6, cost: 0.0032 },
+  { level: 7, cost: 0.0064 },
+  { level: 8, cost: 0.0128 },
+  { level: 9, cost: 0.0256 },
+  { level: 10, cost: 0.0512 },
+  { level: 11, cost: 0.1024 },
+  { level: 12, cost: 0.2048 },
 ];
 
 const LevelSliderx3: React.FC = () => {
-   
   const walletAddress = useWallet();
-  console.log("address:", walletAddress);
-  // Access the `address` field within the object, or handle undefined
+  const [currentLevel, setCurrentLevel] = useState(1);
+  const [activeLevels, setActiveLevels] = useState<boolean[]>(new Array(12).fill(false));
+  const [partnerCounts, setPartnerCounts] = useState<number[]>(new Array(12).fill(0));
+  const [cyclesData, setCyclesData] = useState<number[]>(new Array(12).fill(0));
+  const [reminderData, setReminderData] = useState<number[]>(new Array(12).fill(0));
+  const [totalRevenue, setTotalRevenue] = useState<number>(0);
+
+  const [userId, setUserId] = useState<string | null>(null);
   const staticAddress = walletAddress ? walletAddress.walletAddress : null;
-  const userWalletAddress = staticAddress;
-  console.log("staticAddress:", staticAddress);
-
-  const searchParams = useSearchParams(); // Get search parameters from URL
-  const userId = searchParams.get('userId'); // Extract userId from query parameters
-  const initialLevel = Number(searchParams.get('level')) || 1; // Get 'level' from URL, fallback to 1 if not present
-  const [currentLevel, setCurrentLevel] = useState(initialLevel); // Use URL parameter for the initial state
-  const [userAddress, setUserAddress] = useState<string>(''); // Initially empty, will set to static or fetched address
-
-  const { getTotalCycles, userX3Matrix, getPartnerCount, getUserIdsWalletaddress,users } = useSmartContract();
-  const [currentPartner, setcurrentPartner] = useState<(number | null)[]>(Array(levels.length).fill(null));
-  const [cyclesData, setCyclesData] = useState<(number | null)[]>(Array(levels.length).fill(null));
-  const [partnersData, setPartnersData] = useState<number[]>(Array(levels.length).fill(0)); // Initialize with numbers
-  const [partnerIds, setPartnerIds] = useState<(string | null)[][]>(Array(levels.length).fill([])); // State to hold partner IDs
-  // Upline user address id
-  const [uplineuserData, setuplineuserData] = useState<{
-    id: number;
-    referrer: string;
-    partnersCount: number;
-    registrationTime: number;
-  } | null>(null);
-
-
-
-
-  const matrix = 1; // Assuming a static matrix ID, adjust if needed
-
-  const [userData, setUserData] = useState<{
-    id: number;
-    referrer: string;
-    partnersCount: number;
-    registrationTime: number;
-  } | null>(null);
-
-  const [error, setError] = useState<string | null>(null);
-
-
-
-    // Fetch user wallet address if userId is provided, else use static address
-    useEffect(() => {
-      const fetchUserAddress = async () => {
-        if (userId) {
-          try {
-            const walletAddress = await getUserIdsWalletaddress(Number(userId)); // Ensure userId is treated as a number
-            if (walletAddress) {
-              console.log("Fetched wallet address:", userWalletAddress); // Log the fetched address for debugging
-              setUserAddress(userWalletAddress || 'null'); // Set the fetched wallet address
-            }
-          } catch (error) {
-            console.error("Error fetching wallet address for userId:", error);
-            setUserAddress(userWalletAddress || 'null'); // Use static address if fetching fails
-          }
-        } else {
-          // If no userId, use static wallet address
-          setUserAddress(userWalletAddress || 'null');
-        }
-      };
-  
-      fetchUserAddress();
-    }, [userId, getUserIdsWalletaddress]);
-
-  // Fetch current user data
-  const handleFetchUser = async () => {
-    try {
-      const data = await users(userAddress);
-      if (data) {
-        setUserData(data);
-        setError(null); // Clear error if successful
-        // Fetch the referrer (upline user data) based on the referrer address from the userData
-        if (data.referrer) {
-          handleFetchUserupline(data.referrer);
-        }
-      } else {
-        setError("No data found for the user.");
-      }
-    } catch (err) {
-      console.error("Error fetching user data:", err);
-      setError("Failed to fetch user data. Please try again.");
-    }
-  };
-
-  // Fetch upline user data
-  const handleFetchUserupline = async (referrerAddress: string) => {
-    try {
-      const data = await users(referrerAddress);
-      if (data) {
-        setuplineuserData(data);
-        setError(null); // Clear error if successful
-      } else {
-        setError("No data found for the upline.");
-      }
-    } catch (err) {
-      console.error("Error fetching upline user data:", err);
-      setError("Failed to fetch upline user data. Please try again.");
-    }
-  };
+  const [uplineId, setUplineId] = useState<string | null>(null);
+  const [actualPartnersPerLevel, setActualPartnersPerLevel] = useState<number[]>([]);
 
   useEffect(() => {
-    handleFetchUser();
-  }, [users, userAddress]);
-
-  // Fetch cycles and partner data
-  useEffect(() => {
-    const fetchCyclesAndPartnersData = async () => {
+    const fetchUserId = async () => {
       try {
-        const updatedCycles = await Promise.all(
-          levels.map(async (level) => {
-            const cycles = await getTotalCycles(userAddress, matrix, level.level);
-            return cycles;
-          })
-        );
+        const { data } = await client.query({
+          query: GET_WALLET_ADDRESS_TO_ID,
+          variables: { wallet: staticAddress },
+        }) as ApolloQueryResult<any>;
 
-        const updatedPartners = await Promise.all(
-          levels.map(async (level) => {
-            const partnerCount = await getPartnerCount(userAddress, matrix, level.level);
-            return partnerCount || 0;
-          })
-        );
-
-        const fetchUserIdByAddress = async (partnerAddress: string) => {
-          try {
-            const userInfo = await users(partnerAddress);
-            if (userInfo) {
-              return userInfo.id.toString();
-            }
-            return null;
-          } catch (error) {
-            console.error(`Error fetching user ID for address ${partnerAddress}:`, error);
-            return null;
-          }
-        };
-
-        const currenctData = await Promise.all(
-          levels.map(async (level) => {
-            const partnersInfo = await userX3Matrix(userAddress, level.level) as [number, string[]] | null;
-
-            if (partnersInfo && Array.isArray(partnersInfo[1])) {
-              const partnerAddresses = partnersInfo[1];
-              const partnerCount = partnerAddresses.length;
-              console.log("partnerCount:"+ partnerCount);
-              const userIds = await Promise.all(
-                partnerAddresses.map(async (address) => {
-                  const userId = await fetchUserIdByAddress(address);
-                  return userId;
-                })
-              );
-
-              setPartnerIds((prev) => {
-                const newPartnerIds = [...prev];
-                newPartnerIds[level.level - 1] = userIds.map(id => id ? id.toString() : null);
-                return newPartnerIds;
-              });
-
-              return partnerCount;
-            }
-
-            return 0;
-          })
-        );
-
-        setcurrentPartner(currenctData);
-        setCyclesData(updatedCycles);
-        setPartnersData(updatedPartners);
+        if (data?.registrations?.length > 0) {
+          setUserId(data.registrations[0].userId);
+        } else {
+          setUserId(null);
+        }
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching user ID:', error);
+        setUserId(null);
       }
     };
 
-    fetchCyclesAndPartnersData();
-  }, [getTotalCycles, userX3Matrix, getPartnerCount, userAddress, matrix]);
+    fetchUserId();
+  }, [staticAddress]);
 
-  const nextLevel = () => {
-    if (currentLevel < 12) {
-      setCurrentLevel(currentLevel + 1);
-    }
+  //staticaddress to uplineid fetch data throgh graphql api
+  useEffect(() => {
+    const fetchUplineId = async () => {
+      try {
+        const { data } = await client.query({
+          query: GET_WALLET_ADDRESS_TO_UPLINE_ID,
+          variables: { walletAddress: staticAddress },
+        }) as ApolloQueryResult<any>;
+
+        if (data?.registrations?.length > 0) {
+          setUplineId(data.registrations[0].referrerId);
+        } else {
+          setUplineId(null);
+        }
+      } catch (error) {
+        console.error('Error fetching upline ID:', error);
+        setUplineId(null);
+      }
+    };
+    fetchUplineId();
+  }, [staticAddress]);
+
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!staticAddress) return;
+
+      const activeLevelsResponse = await client.query({
+        query: getUserPlacesQuery,
+        variables: { walletAddress: staticAddress },
+      });
+
+      const activeLevelsArray = new Array(12).fill(false);
+      activeLevelsArray[0] = true; // Ensure level 1 is always active
+
+      if (activeLevelsResponse.data && activeLevelsResponse.data.upgrades) {
+        activeLevelsResponse.data.upgrades.forEach((upgrade: { level: number }) => {
+          if (upgrade.level >= 1 && upgrade.level <= 12) {
+            activeLevelsArray[upgrade.level - 1] = true;
+          }
+        });
+      }
+
+      const partnersResponse = await Promise.all(
+        levels.map((level) =>
+          client.query({
+            query: x3Activelevelpartner,
+            variables: { walletAddress: staticAddress, level: level.level },
+          })
+        )
+      );
+
+      const partnerCountsArray = partnersResponse.map((response) => {
+        const partnersAtLevel = response.data.newUserPlaces || [];
+        return partnersAtLevel.length;
+      });
+
+      const cycleData = partnerCountsArray.map((partnerCount) => {
+        const fullCycles = Math.floor(partnerCount / 3);
+        const remainder = partnerCount % 3;
+        return { fullCycles, remainder };
+      });
+
+      setCyclesData(cycleData.map((data) => data.fullCycles));
+      setReminderData(cycleData.map((data) => data.remainder));
+      setPartnerCounts(partnerCountsArray);
+      setActiveLevels(activeLevelsArray);
+
+            // Now, let's compare each level's partners to direct partners
+            const { data: directPartnersData } = await client.query({
+              query: GET_REGISTRATIONS,
+              variables: { referrer: staticAddress },
+            });
+      
+            const directPartners = directPartnersData.registrations.map(
+              (registration: { user: string }) => registration.user
+            );
+            console.log("Direct Partners:", directPartners);
+      
+            // Check each level's partners against direct partners
+            const actualPartnersPerLevel = partnerCounts.map((_, index) => {
+              const levelPartners = partnersResponse[index].data.newUserPlaces.map(
+                (partner: { user: string }) => partner.user
+              );
+                const uniqueLevelPartners = Array.from(new Set(levelPartners)) as string[];
+                const matchingPartners: string[] = uniqueLevelPartners.filter((partner: string) =>
+                  directPartners.includes(partner)
+                );
+                console.log(`Level ${index + 1} Actual Partners:`, matchingPartners.length);
+                return matchingPartners.length;
+              });
+              
+            setActualPartnersPerLevel(actualPartnersPerLevel);
+
+    };
+
+    fetchData();
+  }, [staticAddress]);
+
+  const handleLevelChange = (direction: 'prev' | 'next') => {
+    setCurrentLevel((prevLevel) =>
+      direction === 'prev' ? Math.max(prevLevel - 1, 1) : Math.min(prevLevel + 1, 12)
+    );
   };
 
-  const previousLevel = () => {
-    if (currentLevel > 1) {
-      setCurrentLevel(currentLevel - 1);
-    }
-  };
-
-  const levelData = levels.find(level => level.level === currentLevel);
-  const adjustedPartnersCount = partnersData[currentLevel - 1];
-  // Calculate total revenue considering cycles and partners
-  const cyclesContribution = (cyclesData[currentLevel - 1] ?? 0) * 2 * (levelData?.cost ?? 0);
-  console.log("total cyclesCountribution:" + cyclesContribution);
-  const partnerContribution = (currentPartner[currentLevel - 1] ?? 0) * (levelData?.cost ?? 0);
-  console.log("total partnerContribution:" + partnerContribution);
-  const totalRevenue = cyclesContribution + partnerContribution;
-  console.log("total totalRevenue:" + totalRevenue);
-
-// all level TotalRevenue store in DataTotalRevenue in console log in print
-const DataTotalRevenue = levels.map((level, index) => {
-  const cyclesContribution = cyclesData[index] ? cyclesData[index] * 2 * level.cost : 0; // Calculate cycles contribution for each level
-  const partnerContribution = currentPartner[index] ? currentPartner[index] * level.cost : 0; // Calculate partner contribution for each level
-  const totalRevenue = cyclesContribution + partnerContribution; // Total revenue for the current level
-  return totalRevenue; // Store the total revenue in the array
-});
-
-
-// Log total revenue for each level
-DataTotalRevenue.forEach((revenue, index) => {
-  console.log(`Total revenue for level ${index + 1}: ${revenue}`);
-});
-
-// Calculate the overall total revenue
-const overallTotalRevenue = DataTotalRevenue.reduce((acc, curr) => acc + curr, 0);
-
-// Log the array of total revenues
-console.log("Total revenue for all levels:", DataTotalRevenue);
-
-// Log the overall total revenue
-console.log(`Overall total revenue: ${overallTotalRevenue}`);
-  // const TotalRevenueCal = cyclesData[currentLevel - 1] + currentPartner[currentLevel - 1];
   return (
     <>
-         {/* {address ? (
-        <p>{address}</p>
-      ) : (
-        <p>No wallet connected</p>
-      )} */}
-       <LevelHeader userid={userData?.id ?? 0} level={currentLevel} uplineId={uplineuserData?.id ?? 0} />
-      
-      
-       
+      <LevelHeader userid={userId || ''} level={currentLevel} uplineId={uplineId ? parseInt(uplineId) : 0} />
+
       <div className="flex items-center justify-center text-white p-4 mx-auto max-w-screen-lg">
+        {/* Previous Level Button */}
         <button
-          onClick={previousLevel}
-          className={`p-4 rounded-3xl h-20 lg:h-24 transition-all duration-200 ease-in-out ${currentLevel === 1 ? 'bg-gray-600 cursor-not-allowed' : 'bg-gray-700 hover:bg-gray-600'
-            }`}
+          onClick={() => handleLevelChange('prev')}
+          className={`p-4 rounded-3xl h-20 lg:h-24 transition-all duration-200 ease-in-out ${
+            currentLevel === 1 ? 'bg-gray-600 cursor-not-allowed' : 'bg-gray-700 hover:bg-gray-600'
+          }`}
           disabled={currentLevel === 1}
         >
           {currentLevel > 1 ? currentLevel - 1 : ''}
         </button>
-        <div className="flex-grow mx-4">
-          {levelData && (
+
+        {/* Level Card */}
+        <div className="flex-grow mx-4 relative">
+          {levels && (
             <div className="bg-blue-700 rounded-lg text-center border border-gray-600 relative">
               <div className="p-9">
                 <div className="flex justify-between items-center mb-6">
-                  <div className="text-xl font-bold">Lvl {levelData.level}</div>
-                  <div className="text-xl font-bold">ID: {userData?.id || 'Loading...'}</div> {/* Safely access userData.id */}
-                  <div className="text-lg">{levelData.cost} BUSD</div>
+                  <div className="text-xl font-bold">Lvl {currentLevel}</div>
+                  <div className="text-xl font-bold">ID: {userId || 'Loading...'}</div>
+                  <div className="text-lg">{levels[currentLevel - 1].cost} BUSD</div>
                 </div>
+
+                {/* Partner Indicators */}
                 <div className="flex justify-center items-center mb-6 gap-4">
-                  {/* Partner Circles with User IDs */}
                   {Array.from({ length: 3 }).map((_, i) => (
                     <div key={i} className="flex flex-col items-center">
                       <div
-                        className={`relative w-24 h-24 rounded-full ${currentPartner && currentLevel && currentPartner[currentLevel - 1] !== null && i < currentPartner[currentLevel - 1]! ? 'bg-blue-600' : 'bg-gray-400'}`}
+                        className={`relative w-24 h-24 rounded-full ${
+                          activeLevels[currentLevel - 1] && i < reminderData[currentLevel - 1]
+                            ? 'bg-blue-600'
+                            : 'bg-gray-400'
+                        }`}
                       >
-                        {/* Center User ID within the circle */}
-                        {currentPartner?.[currentLevel - 1] !== null && partnerIds?.[currentLevel - 1]?.[i] && i < currentPartner[currentLevel - 1]! && (
+                        {i < partnerCounts[currentLevel - 1] && (
                           <span className="absolute inset-0 flex justify-center items-center text-sm text-white">
-                            {partnerIds[currentLevel - 1][i]}
+                            {i + 1}
                           </span>
                         )}
                       </div>
@@ -294,36 +218,50 @@ console.log(`Overall total revenue: ${overallTotalRevenue}`);
                   ))}
                 </div>
 
+                {/* Level Stats */}
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center">
-                    <span className="mr-2">👥</span> {adjustedPartnersCount}
+                  <span className="mr-2">👥</span> {actualPartnersPerLevel[currentLevel - 1]}
                   </div>
                   <div className="flex items-center">
-                    <span className="mr-2">🔄</span> {cyclesData[currentLevel - 1] !== null ? cyclesData[currentLevel - 1] : 'Loading...'}
+                    <span className="mr-2">🔄</span> {cyclesData[currentLevel - 1]} 
                   </div>
                 </div>
+
+                {/* Total Revenue */}
                 <div className="flex justify-center items-center">
                   <span className="mr-2">💰</span>
-                  {totalRevenue}
-                  BUSD
+                  {totalRevenue} BUSD
                 </div>
               </div>
+
+              {/* Inactive Overlay */}
+              {!activeLevels[currentLevel - 1] && (
+                <div className="absolute inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center text-white text-lg font-bold">
+                    <button className="px-6 py-2 rounded text-xl">Inactive</button>
+                </div>
+              )}
             </div>
           )}
         </div>
+
+        {/* Next Level Button */}
         <button
-          onClick={nextLevel}
-          className={`p-4 rounded-3xl h-20 lg:h-24 transition-all duration-200 ease-in-out ${currentLevel === 12 ? 'bg-gray-600 cursor-not-allowed' : 'bg-gray-700 hover:bg-gray-600'
-            }`}
+          onClick={() => handleLevelChange('next')}
+          className={`p-4 rounded-3xl h-20 lg:h-24 transition-all duration-200 ease-in-out ${
+            currentLevel === 12 ? 'bg-gray-600 cursor-not-allowed' : 'bg-gray-700 hover:bg-gray-600'
+          }`}
           disabled={currentLevel === 12}
         >
           {currentLevel < 12 ? currentLevel + 1 : ''}
         </button>
       </div>
+
+      {/* NotifyBot and Level Transactions */}
       <div className="my-9">
         <NotifyBot />
-        <LevelTransection matrix={1} currentLevel={currentLevel} /> {/* Pass currentLevel to LevelTransection */}
-        </div>
+        <LevelTransection matrix={1} currentLevel={currentLevel} />
+      </div>
     </>
   );
 };

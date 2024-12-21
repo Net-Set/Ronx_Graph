@@ -1,193 +1,154 @@
 'use client';
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   useTable,
   useResizeColumns,
   useFlexLayout,
   useSortBy,
   usePagination,
+  Column,
 } from 'react-table';
 import Button from '@/components/ui/button';
 import Scrollbar from '@/components/ui/scrollbar';
 import { ChevronDown } from '@/components/icons/chevron-down';
 import { LongArrowRight } from '@/components/icons/long-arrow-right';
 import { LongArrowLeft } from '@/components/icons/long-arrow-left';
-import { LinkIcon } from '@/components/icons/link-icon';
+import client from '@/lib/apolloClient';
+import { GET_STATS_DATA } from '@/graphql/Get_Stats_Data/queries';
+import { useWallet } from '@/app/context/WalletContext';
+import { ExternalLinkIcon, CopyIcon } from '@chakra-ui/icons';
+import Image from 'next/image';
+import Person from '@/assets/icons/profile.png';
+import Recycle from '@/assets/icons/recycle_icon.jpg';
+
 
 interface TransactionData {
-  id: number;
-  filters: string;
   type: string;
   date: string;
-  idDetail: string;
+  id: string;
   program: string;
-  level: string;
+  level: number;
   wallet: string;
-  busdProfit: string;
-  description: string;
+  profit: string;
 }
-
-const transactions: TransactionData[] = [
-  {
-    id: 1710397,
-    filters: "Type",
-    type: "Date",
-    date: "ID",
-    idDetail: "Program",
-    program: "Level",
-    level: "Wallet",
-    wallet: "BUSD / BNB profit",
-    busdProfit: "2024.07.09 04:05",
-    description: "ID 1716829",
-  },
-  {
-    id: 1716829,
-    filters: "x3",
-    type: "3",
-    date: "0x0a724...c5eA7",
-    idDetail: "20 BUSD",
-    program: "2024.07.09 03:59",
-    level: "x3",
-    wallet: "3",
-    busdProfit: "0xf6D47...fd85b",
-    description: "upgrade",
-  },
-  {
-    id: 1716829,
-    filters: "x3",
-    type: "2",
-    date: "0x0a724...c5eA7",
-    idDetail: "10 BUSD",
-    program: "2024.07.08 13:32",
-    level: "x4",
-    wallet: "1",
-    busdProfit: "0x0a724...c5eA7",
-    description: "send to upline",
-  },
-  {
-    id: 1755104,
-    filters: "x4",
-    type: "1",
-    date: "0xcF76A...55175",
-    idDetail: "recycle",
-    program: "2024.07.05 18:25",
-    level: "x3",
-    wallet: "1",
-    busdProfit: "5 BUSD",
-    description: "2024.06.14 16:46",
-  }
+const levels = [
+  { level: 1, cost: 0.0001 },
+  { level: 2, cost: 0.0002 },
+  { level: 3, cost: 0.0004 },
+  { level: 4, cost: 0.0008 },
+  { level: 5, cost: 0.0016 },
+  { level: 6, cost: 0.0032 },
+  { level: 7, cost: 0.0064 },
+  { level: 8, cost: 0.0128 },
+  { level: 9, cost: 0.0256 },
+  { level: 10, cost: 0.0512 },
+  { level: 11, cost: 0.1024 },
+  { level: 12, cost: 0.2048 },
 ];
 
-const COLUMNS = [
+
+const COLUMNS: Column<TransactionData>[] = [
   {
-    Header: 'ID',
-    accessor: 'id',
-    minWidth: 60,
-    maxWidth: 80,
-  },
-  {
-    Header: 'Filters',
-    accessor: 'filters',
-    minWidth: 60,
-    maxWidth: 80,
-  },
-  {
-    Header: () => <div className="ltr:ml-auto rtl:mr-auto">Type</div>,
+    Header: 'Type',
     accessor: 'type',
-    // @ts-ignore
-    Cell: ({ cell: { value } }) => (
-      <div className="ltr:text-right rtl:text-left">{value}</div>
-    ),
+    minWidth: 100,
+    maxWidth: 150,
+  },
+  {
+    Header: 'Date',
+    accessor: 'date',
     minWidth: 160,
     maxWidth: 220,
   },
   {
-    Header: () => <div className="ltr:ml-auto rtl:mr-auto">Date</div>,
-    accessor: 'date',
-    // @ts-ignore
-    Cell: ({ cell: { value } }) => (
-      <div className="ltr:text-right rtl:text-left">{value}</div>
-    ),
-    minWidth: 80,
-    maxWidth: 120,
-  },
-  {
-    Header: () => <div className="hidden">ID Detail</div>,
-    accessor: 'idDetail',
-    // @ts-ignore
-    Cell: ({ cell: { value } }) => (
-      <div className="hidden">{value}</div>
-    ),
+    Header: 'ID',
+    accessor: 'id',
     minWidth: 100,
-    maxWidth: 180,
+    maxWidth: 150,
   },
   {
-    Header: () => <div className="ltr:ml-auto rtl:mr-auto">Program</div>,
+    Header: 'Program',
     accessor: 'program',
-    // @ts-ignore
-    Cell: ({ cell: { value } }) => (
-      <div className="flex items-center justify-end">
-        {value}
-      </div>
-    ),
-    minWidth: 220,
-    maxWidth: 280,
+    minWidth: 100,
+    maxWidth: 150,
   },
   {
-    Header: () => <div className="ltr:ml-auto rtl:mr-auto">Level</div>,
+    Header: 'Level',
     accessor: 'level',
-    // @ts-ignore
-    Cell: ({ cell: { value } }) => (
-      <div className="flex items-center justify-end">
-        {value}
-      </div>
-    ),
-    minWidth: 220,
-    maxWidth: 280,
+    minWidth: 60,
+    maxWidth: 80,
   },
   {
-    Header: () => <div className="ltr:ml-auto rtl:mr-auto">Wallet</div>,
+    Header: 'Wallet',
     accessor: 'wallet',
-    // @ts-ignore
-    Cell: ({ cell: { value } }) => (
-      <div className="flex items-center justify-end">
-        {value}
-      </div>
-    ),
     minWidth: 220,
     maxWidth: 280,
+    Cell: ({ value }) => (
+      <div className="flex items-center">
+        <a
+          href={`https://testnet.bscscan.com/address/${value}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-500 hover:text-blue-700 flex items-center"
+        >
+            {value.slice(0, 6) + '.....' + value.slice(-8)}<ExternalLinkIcon className="ml-1" />
+        </a>
+        <button
+          onClick={() => navigator.clipboard.writeText(value)}
+          className="ml-2 text-white hover:text-blue-700"
+        >
+          <CopyIcon />
+        </button>
+      </div>
+    ),
   },
   {
-    Header: () => <div className="ltr:ml-auto rtl:mr-auto">BUSD / BNB Profit</div>,
-    accessor: 'busdProfit',
-    // @ts-ignore
-    Cell: ({ cell: { value } }) => (
-      <div className="flex items-center justify-end">
-        {value}
-      </div>
-    ),
-    minWidth: 220,
-    maxWidth: 280,
-  },
-  {
-    Header: () => <div className="ltr:ml-auto rtl:mr-auto">Description</div>,
-    accessor: 'description',
-    // @ts-ignore
-    Cell: ({ cell: { value } }) => (
-      <div className="flex items-center justify-end">
-        {value}
-      </div>
-    ),
-    minWidth: 220,
-    maxWidth: 280,
+    Header: 'BUSD / BNB profit',
+    accessor: 'profit',
+    minWidth: 100,
+    maxWidth: 150,
   },
 ];
-
 export default function StatsComponent() {
-  const data = React.useMemo(() => transactions, []);
+  const walletAddress = useWallet();
+  const staticAddress = walletAddress ? walletAddress.walletAddress : null;
+  const userWalletAddress = staticAddress;
+  const [data, setData] = useState<TransactionData[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { data } = await client.query({
+          query: GET_STATS_DATA,
+          variables: { walletAddress: userWalletAddress },
+        });
+        console.log('data', data);
+        // Transform the data to match the required format
+        const transformedData = data.newUserPlaces.map((item: any) => ({
+          type: item.place === 3 ? (
+            <Image src={Recycle} alt="Recycle" width={20} height={20} />
+          ) : (
+            <Image src={Person} alt="Person" width={20} height={20} />
+          ),
+          date: new Date(parseInt(item.blockTimestamp) * 1000).toLocaleString(),
+          id: item.user.slice(0, 6) + '...' + item.user.slice(-4),
+          program: item.matrix === 1 ? 'x3' : 'x4',
+          level: item.level,
+          wallet: item.user,
+          profit: levels.find(level => level.level === item.level)?.cost || 0,
+        }));
+        setData(transformedData);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching user stats:', error);
+        setLoading(false);
+      }
+    };
+    if (userWalletAddress) {
+      fetchData();
+    }
+  }, [userWalletAddress]);
   const columns = React.useMemo(() => COLUMNS, []);
-
   const {
     getTableProps,
     getTableBodyProps,
@@ -202,7 +163,6 @@ export default function StatsComponent() {
     prepareRow,
   } = useTable(
     {
-      // @ts-ignore
       columns,
       data,
       initialState: { pageSize: 5 },
@@ -212,17 +172,14 @@ export default function StatsComponent() {
     useFlexLayout,
     usePagination
   );
-
   const { pageIndex } = state;
-
   return (
     <div className="">
       <div className="rounded-tl-lg rounded-tr-lg bg-white px-4 pt-6 dark:bg-light-dark md:px-8 md:pt-8">
         <div className="flex flex-col items-center justify-between border-b border-dashed border-gray-200 pb-5 dark:border-gray-700 md:flex-row">
-        <h2 className="mb-3 shrink-0 text-lg font-medium uppercase text-black dark:text-green sm:text-xl md:mb-0 md:text-2xl bg-grey-500 text-white p-2 rounded-lg shadow-lg">
-  #2839743
-</h2>
-
+          <h2 className="mb-3 shrink-0 text-lg font-medium uppercase text-black dark:text-green sm:text-xl md:mb-0 md:text-2xl bg-grey-500 text-white p-2 rounded-lg shadow-lg">
+     Stats
+          </h2>
         </div>
       </div>
       <div className="-mx-0.5 dark:[&_.os-scrollbar_.os-scrollbar-track_.os-scrollbar-handle:before]:!bg-white/50">
@@ -237,9 +194,7 @@ export default function StatsComponent() {
                   <tr {...headerGroup.getHeaderGroupProps()} key={idx}>
                     {headerGroup.headers.map((column, idx) => (
                       <th
-                        {...column.getHeaderProps(
-                          column.getSortByToggleProps()
-                        )}
+                        {...column.getHeaderProps(column.getSortByToggleProps())}
                         key={idx}
                         className="group  bg-white px-2 py-5 font-normal first:rounded-bl-lg last:rounded-br-lg ltr:first:pl-8 ltr:last:pr-8 rtl:first:pr-8 rtl:last:pl-8 dark:bg-light-dark md:px-4"
                       >
@@ -248,9 +203,7 @@ export default function StatsComponent() {
                           {column.canResize && (
                             <div
                               {...column.getResizerProps()}
-                              className={`resizer ${
-                                column.isResizing ? 'isResizing' : ''
-                              }`}
+                              className={`resizer ${column.isResizing ? 'isResizing' : ''}`}
                             />
                           )}
                           <span className="ltr:ml-1 rtl:mr-1">

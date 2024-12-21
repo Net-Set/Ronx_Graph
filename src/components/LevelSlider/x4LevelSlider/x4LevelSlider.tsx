@@ -1,306 +1,259 @@
-'use client'; // Ensure client-side rendering
+"use client";
 
-import React, { useEffect, useState,Suspense  } from 'react';
-import { useSearchParams } from 'next/navigation'; // Import useSearchParams to access URL parameters
-import LevelHeader from '@/components/levelheader/x4levelheader/x4levelheader';
-import TransactionTable from '@/components/transaction/transaction-table';
-import NotifyBot from '@/components/notifybot/notifybot';
-import { useSmartContract } from '@/components/SmartContract/SmartContractProvider'; // Import the contract context
-import LevelTransection from '@/components/level_transection/level_transection';
-import { useWallet } from '@/app/context/WalletContext'; // Import the wallet context
-const levels = [
-  { level: 1, cost: 5 },
-  { level: 2, cost: 10 },
-  { level: 3, cost: 20 },
-  { level: 4, cost: 40 },
-  { level: 5, cost: 80 },
-  { level: 6, cost: 160 },
-  { level: 7, cost: 320 },
-  { level: 8, cost: 640 },
-  { level: 9, cost: 1250 },
-  { level: 10, cost: 2500 },
-  { level: 11, cost: 5000 },
-  { level: 12, cost: 9900 },
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import NotifyBot from "@/components/notifybot/notifybot";
+import LevelHeader from "@/components/levelheader/x4levelheader/x4levelheader";
+import LevelTransection from "@/components/level_transection/level_transection";
+import { useWallet } from '@/app/context/WalletContext';
+
+import client from "@/lib/apolloClient";
+import { ApolloQueryResult } from '@apollo/client';
+
+import { getUserPlacesQuery } from "@/graphql/Grixdx4Level_Partner_and_Cycle_Count_and_Active_Level/queries";
+import { x4Activelevelpartner, GET_REGISTRATIONS } from "@/graphql/level_Ways_Partner_data_x4/queries";
+import { GET_WALLET_ADDRESS_TO_ID } from '@/graphql/WalletAddress_To_Id/queries';
+import { GET_WALLET_ADDRESS_TO_UPLINE_ID } from '@/graphql/WalletAddress_To_UplineId/queries';
+
+const levelDataX4 = [
+  { level: 1, cost: 0.0001 },
+  { level: 2, cost: 0.0002 },
+  { level: 3, cost: 0.0004 },
+  { level: 4, cost: 0.0008 },
+  { level: 5, cost: 0.0016 },
+  { level: 6, cost: 0.0032 },
+  { level: 7, cost: 0.0064 },
+  { level: 8, cost: 0.0128 },
+  { level: 9, cost: 0.0256 },
+  { level: 10, cost: 0.0512 },
+  { level: 11, cost: 0.1024 },
+  { level: 12, cost: 0.2048 },
 ];
 
 const LevelSliderx4: React.FC = () => {
-  const searchParams = useSearchParams(); // Get search parameters from URL
   const walletAddress = useWallet();
-  console.log("address:", walletAddress);
-  // Access the `address` field within the object, or handle undefined
+  const [currentLevel, setCurrentLevel] = useState<number>(1);
+  const [cyclesData, setCyclesData] = useState<number[]>(Array(levelDataX4.length).fill(0));
+  const [partnersData, setPartnersData] = useState<number[]>(Array(levelDataX4.length).fill(0));
+  const [layerOneData, setLayerOneData] = useState<number[]>(Array(levelDataX4.length).fill(0));
+  const [layerTwoData, setLayerTwoData] = useState<number[]>(Array(levelDataX4.length).fill(0));
+  const [isActiveLevels, setIsActiveLevels] = useState<boolean[]>(Array(levelDataX4.length).fill(false));
+  const [userId, setUserId] = useState<string | null>(null);
+  const [uplineId, setUplineId] = useState<number | null>(null);
   const staticAddress = walletAddress ? walletAddress.walletAddress : null;
-  const userWalletAddress = staticAddress;
-
-  console.log("staticAddress:", staticAddress);
-  const initialLevel = Number(searchParams.get('level')) || 1; // Get 'level' from URL, fallback to 1 if not present
-  const [currentLevel, setCurrentLevel] = useState(initialLevel); // Use URL parameter for the initial state
-  const { getTotalCycles, userX4Matrix, getPartnerCount, users } = useSmartContract();
-  const [currentPartnerLayer1, setCurrentPartnerLayer1] = useState<(number | null)[]>(Array(levels.length).fill(null));
-  const [currentPartnerLayer2, setCurrentPartnerLayer2] = useState<(number | null)[]>(Array(levels.length).fill(null));
-  const [cyclesData, setCyclesData] = useState<(number | null)[]>(Array(levels.length).fill(null));
-  const [partnersData, setPartnersData] = useState<number[]>(Array(levels.length).fill(0)); // Initialize with numbers
-  const [partnerIdsLayer1, setPartnerIdsLayer1] = useState<(string | null)[][]>(Array(levels.length).fill([])); // For Layer 1 IDs
-  const [partnerIdsLayer2, setPartnerIdsLayer2] = useState<(string | null)[][]>(Array(levels.length).fill([])); // For Layer 2 IDs
-    // Upline user address id
-    const [uplineuserData, setuplineuserData] = useState<{
-        id: number;
-        referrer: string;
-        partnersCount: number;
-        registrationTime: number;
-      } | null>(null);
-    
-
-  const userAddress = '0xD733B8fDcFaFf240c602203D574c05De12ae358C';
-  const matrix = 2; // Assuming a static matrix ID, adjust if needed
-
-  const [userData, setUserData] = useState<{
-    id: number;
-    referrer: string;
-    partnersCount: number;
-    registrationTime: number;
-  } | null>(null);
-
-  const [error, setError] = useState<string | null>(null);
-
-  // Fetch current user data
-  const handleFetchUser = async () => {
-    try {
-      const data = await users(userAddress);
-      if (data) {
-        setUserData(data);
-        setError(null); // Clear error if successful
-        if (data.referrer) {
-            handleFetchUserupline(data.referrer);
-          }
-      } else {
-        setError("No data found for the user.");
-      }
-    } catch (err) {
-      console.error("Error fetching user data:", err);
-      setError("Failed to fetch user data. Please try again.");
-    }
-  };
-
-  // Fetch upline user data
-  const handleFetchUserupline = async (referrerAddress: string) => {
-    try {
-      const data = await users(referrerAddress);
-      if (data) {
-        setuplineuserData(data);
-        setError(null); // Clear error if successful
-      } else {
-        setError("No data found for the upline.");
-      }
-    } catch (err) {
-      console.error("Error fetching upline user data:", err);
-      setError("Failed to fetch upline user data. Please try again.");
-    }
-  };
+  const [actualPartnersPerLevel, setActualPartnersPerLevel] = useState<number[]>([]);
 
   useEffect(() => {
-    handleFetchUser();
-  }, [users, userAddress]);
-
-  // Fetch cycles and partner data
-  useEffect(() => {
-    const fetchCyclesAndPartnersData = async () => {
+    const fetchUserId = async () => {
       try {
-        // Fetch total cycles for each level
-        const updatedCycles = await Promise.all(
-          levels.map(async (level) => {
-            const cycles = await getTotalCycles(userAddress, matrix, level.level);
-            return cycles;
-          })
-        );
+        const { data } = await client.query({
+          query: GET_WALLET_ADDRESS_TO_ID,
+          variables: { wallet: staticAddress },
+        }) as ApolloQueryResult<any>;
 
-        // Fetch partner counts for each level
-        const updatedPartners = await Promise.all(
-          levels.map(async (level) => {
-            const partnerCount = await getPartnerCount(userAddress, matrix, level.level);
-            return partnerCount || 0;
-          })
-        );
-
-        const fetchUserIdByAddress = async (partnerAddress: string) => {
-          try {
-            const userInfo = await users(partnerAddress);
-            if (userInfo) {
-              return userInfo.id;
-            }
-            return null;
-          } catch (error) {
-            console.error(`Error fetching user ID for address ${partnerAddress}:`, error);
-            return null;
-          }
-        };
-
-        // Fetch partner data for both layers
-        const layer1Data = await Promise.all(
-          levels.map(async (level) => {
-            const partnersInfo = (await userX4Matrix(userAddress, level.level)) as unknown as any[] || [];
-            const partnersArray: any[] = Array.isArray(partnersInfo) ? partnersInfo : [];
-            if (partnersInfo && Array.isArray(partnersInfo[1])) {
-              const partnerAddressesLayer1 = partnersInfo[1];
-              const userIdsLayer1 = await Promise.all(
-                partnerAddressesLayer1.map(async (address) => {
-                  const userId = await fetchUserIdByAddress(address);
-                  return userId !== null ? userId.toString() : null;
-                })
-              );
-              setPartnerIdsLayer1((prev) => {
-                const newPartnerIds = [...prev];
-                newPartnerIds[level.level - 1] = userIdsLayer1;
-                return newPartnerIds;
-              });
-              return partnerAddressesLayer1.length;
-            }
-            return 0;
-          })
-        );
-
-        const layer2Data = await Promise.all(
-          levels.map(async (level) => {
-            const partnersInfo = (await userX4Matrix(userAddress, level.level) as unknown) as any[] || [];
-            if (partnersInfo && Array.isArray(partnersInfo[2])) {
-              const partnerAddressesLayer2 = partnersInfo[2];
-              const userIdsLayer2 = await Promise.all(
-                partnerAddressesLayer2.map(async (address) => {
-                  const userId = await fetchUserIdByAddress(address);
-                  return userId !== null ? userId.toString() : null;
-                })
-              );
-              setPartnerIdsLayer2((prev) => {
-                const newPartnerIds = [...prev];
-                newPartnerIds[level.level - 1] = userIdsLayer2 as (string | null)[];
-                return newPartnerIds;
-              });
-              return partnerAddressesLayer2.length;
-            }
-            return 0;
-          })
-        );
-
-        setCurrentPartnerLayer1(layer1Data);
-        setCurrentPartnerLayer2(layer2Data);
-        setCyclesData(updatedCycles);
-        setPartnersData(updatedPartners);
+        if (data?.registrations?.length > 0) {
+          setUserId(data.registrations[0].userId);
+        } else {
+          setUserId(null);
+        }
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching user ID:', error);
+        setUserId(null);
       }
     };
 
-    fetchCyclesAndPartnersData();
-  }, [getTotalCycles, userX4Matrix, getPartnerCount, userAddress, matrix]);
+    fetchUserId();
+  }, [staticAddress]);
+
+  //staticAddress to uplineId fetch through graphql query
+  useEffect(() => {
+    const fetchUplineId = async () => {
+      try {
+        const { data } = await client.query({
+          query: GET_WALLET_ADDRESS_TO_UPLINE_ID,
+          variables: { walletAddress: staticAddress },
+        }) as ApolloQueryResult<any>;
+
+        if (data?.registrations?.length > 0) {
+          setUplineId(data.registrations[0].referrerId);
+        } else {
+          setUplineId(null);
+        }
+      } catch (error) {
+        console.error('Error fetching upline ID:', error);
+        setUserId(null);
+      }
+    };  
+    fetchUplineId();
+  }, [staticAddress]);
+
+  useEffect(() => {
+    const fetchLevelData = async () => {
+      try {
+        // Fetch active levels
+        const activeLevelsResponse = await client.query({
+          query: getUserPlacesQuery,
+          variables: { walletAddress: staticAddress },
+        });
+  
+        const activeLevels = Array(12).fill(false);
+        activeLevels[0] = true; // Ensure level 1 is always active
+  
+        if (activeLevelsResponse.data?.upgrades) {
+          activeLevelsResponse.data.upgrades.forEach((upgrade: { level: number }) => {
+            if (upgrade.level >= 1 && upgrade.level <= 12) {
+              activeLevels[upgrade.level - 1] = true;
+            }
+          });
+        }
+  
+        // Fetch partners data for each level
+        const partnersResponse = await Promise.all(
+          levelDataX4.map((data) =>
+            client.query({
+              query: x4Activelevelpartner,
+              variables: { walletAddress: staticAddress, level: data.level },
+            })
+          )
+        );
+  
+        const partnerCounts = partnersResponse.map(
+          (response) => response.data.newUserPlaces?.length || 0
+        );
+        console.log("Partner Counts:", partnerCounts);
+  
+        // Calculate cycles and layer data
+        const updatedCycles = partnerCounts.map((count) => Math.floor(count / 6));
+        const updatedLayerOne = partnerCounts.map((count) => Math.min(count, 2));
+        const updatedLayerTwo = partnerCounts.map((count) => Math.max(0, count - 2));
+  
+        setCyclesData(updatedCycles);
+        setLayerOneData(updatedLayerOne);
+        setLayerTwoData(updatedLayerTwo);
+        setPartnersData(partnerCounts);
+        setIsActiveLevels(activeLevels);
+  
+        // Now, let's compare each level's partners to direct partners
+        const { data: directPartnersData } = await client.query({
+          query: GET_REGISTRATIONS,
+          variables: { referrer: staticAddress },
+        });
+  
+        const directPartners = directPartnersData.registrations.map(
+          (registration: { user: string }) => registration.user
+        );
+        console.log("Direct Partners:", directPartners);
+  
+        // Check each level's partners against direct partners
+        const actualPartnersPerLevel = partnerCounts.map((_, index) => {
+          const levelPartners = partnersResponse[index].data.newUserPlaces.map(
+            (partner: { user: string }) => partner.user
+          );
+            const uniqueLevelPartners = Array.from(new Set(levelPartners)) as string[];
+            const matchingPartners: string[] = uniqueLevelPartners.filter((partner: string) =>
+              directPartners.includes(partner)
+            );
+            console.log(`Level ${index + 1} Actual Partners:`, matchingPartners.length);
+            return matchingPartners.length;
+          });
+          
+        setActualPartnersPerLevel(actualPartnersPerLevel);
+  
+      } catch (error) {
+        console.error("Error fetching level data:", error);
+      }
+    };
+  
+    fetchLevelData();
+  }, [staticAddress]);
+  
 
   const nextLevel = () => {
-    if (currentLevel < 12) {
-      setCurrentLevel(currentLevel + 1);
-    }
+    setCurrentLevel((prev) => (prev < levelDataX4.length ? prev + 1 : prev));
   };
 
   const previousLevel = () => {
-    if (currentLevel > 1) {
-      setCurrentLevel(currentLevel - 1);
-    }
+    setCurrentLevel((prev) => (prev > 1 ? prev - 1 : prev));
   };
 
-  const levelData = levels.find(level => level.level === currentLevel);
-  const adjustedPartnersCount = partnersData[currentLevel - 1];
-  const cyclesContribution = (cyclesData[currentLevel - 1] ?? 0) * 3 * (levelData?.cost ?? 0);
-  const partnerContribution = levelData ? Math.min(currentPartnerLayer2[currentLevel - 1] ?? 0, 3) * levelData.cost : 0;
-  const totalRevenue = cyclesContribution + partnerContribution;
+  const handleActivate = (level: number) => {
+    // Toggle activation state
+    const updatedActiveLevels = [...isActiveLevels];
+    updatedActiveLevels[level - 1] = !updatedActiveLevels[level - 1];
+    setIsActiveLevels(updatedActiveLevels);
+  };
 
   return (
     <Suspense fallback={<div>Loading...</div>}>
-
-      <LevelHeader userid={userData?.id ?? 0} level={currentLevel} uplineId={uplineuserData?.id ?? 0}  />
+      <LevelHeader userid={userId || ''} level={currentLevel} uplineId={uplineId?.toString() || ''} />
       <div className="flex items-center justify-center text-white p-4 mx-auto max-w-screen-lg">
         <button
           onClick={previousLevel}
-          className={`p-4 rounded-3xl h-20 lg:h-24 transition-all duration-200 ease-in-out ${currentLevel === 1 ? 'bg-gray-600 cursor-not-allowed' : 'bg-gray-700 hover:bg-gray-600'
-            }`}
+          className={`p-4 rounded-3xl h-20 lg:h-24 transition-all duration-200 ease-in-out ${currentLevel === 1 ? "bg-gray-600 cursor-not-allowed" : "bg-gray-700 hover:bg-gray-600"}`}
           disabled={currentLevel === 1}
         >
-          {currentLevel > 1 ? currentLevel - 1 : ''}
+          {currentLevel > 1 ? currentLevel - 1 : ""}
         </button>
         <div className="flex-grow mx-4">
-          {levelData && (
-            <div className="bg-blue-700 rounded-lg text-center border border-gray-600 relative">
-              <div className="p-9">
-                <div className="flex justify-between items-center mb-6">
-                  <div className="text-xl font-bold">Lvl {levelData.level}</div>
-                  <div className="text-xl font-bold">ID: {userData?.id || 'Loading...'}</div> {/* Safely access userData.id */}
-                  <div className="text-lg">{levelData.cost} BUSD</div>
-                </div>
+          <div className="bg-blue-700 rounded-lg text-center border border-gray-600 relative">
+            <div className="p-9">
+              <div className="flex justify-between items-center mb-6">
+                <div className="text-xl font-bold">Lvl {currentLevel}</div>
+                <div className="text-xl font-bold">ID: {userId}</div>
+                <div className="text-lg">{levelDataX4[currentLevel - 1]?.cost} BUSD</div>
+              </div>
 
-                {/* First Layer of Partner Circles */}
-                <div className="flex justify-center items-center mb-6 gap-4">
-                  {Array.from({ length: 2 }).map((_, i) => (
-                    <div key={i} className="flex flex-col items-center">
-                      <div
-                        className={`relative w-24 h-24 rounded-full ${i < (currentPartnerLayer1?.[currentLevel - 1] ?? 0) ? 'bg-blue-300' : 'bg-gray-400'
-                          }`}
-                      >
-                        <span className="absolute inset-0 flex items-center justify-center font-bold text-lg">
-                        
-                          {/* blank space if you want show any sport in image and icon show in black */}
-                          {partnerIdsLayer1[currentLevel - 1][i] || ' '}
-                        </span>
-                      </div>
+              {/* First Layer of Partner Circles */}
+              <div className="flex justify-center items-center mb-6 gap-4">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <div key={i} className="flex flex-col items-center">
+                    <div
+                      className={`relative w-24 h-24 rounded-full ${i < layerOneData[currentLevel - 1] ? "bg-blue-300" : "bg-gray-400"}`}
+                    >
+                      <span className="absolute inset-0 flex items-center justify-center font-bold text-lg"> </span>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
+              </div>
 
-                {/* Second Layer of Partner Circles */}
-                <div className="flex justify-center items-center mb-6 gap-4">
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="flex flex-col items-center">
-                      <div
-                        className={`relative w-24 h-24 rounded-full ${i < (currentPartnerLayer2?.[currentLevel - 1] ?? 0) ? 'bg-blue-300' : 'bg-gray-400'
-                          }`}
-                      >
-                        <span className="absolute inset-0 flex items-center justify-center font-bold text-lg">
-                      {/* blank space if you want show any sport in image and icon show in black */}
-
-                          {partnerIdsLayer2[currentLevel - 1][i] || ' '}
-                        </span>
-                      </div>
+              {/* Second Layer of Partner Circles */}
+              <div className="flex justify-center items-center mb-6 gap-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex flex-col items-center">
+                    <div
+                      className={`relative w-24 h-24 rounded-full ${i < layerTwoData[currentLevel - 1] ? "bg-blue-300" : "bg-gray-400"}`}
+                    >
+                      <span className="absolute inset-0 flex items-center justify-center font-bold text-lg"> </span>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
+              </div>
 
-                <div className="flex justify-between items-center mb-4">
+              <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center">
-                    <span className="mr-2">👥</span> {adjustedPartnersCount}
-                  </div>
-                  <div className="flex items-center">
-                    <span className="mr-2">🔄</span> {cyclesData[currentLevel - 1] !== null ? cyclesData[currentLevel - 1] : 'Loading...'}
-                  </div>
+                    <span className="mr-2">👥</span> {actualPartnersPerLevel[currentLevel - 1]}
                 </div>
-                <div className="flex justify-center items-center">
-                  <span className="mr-2">💰</span>
-                  {totalRevenue}
-                  BUSD
-                                  </div>
+                <div className="flex items-center">
+                  <span className="mr-2">🔄</span> {cyclesData[currentLevel - 1]}
+                </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
         <button
           onClick={nextLevel}
-          className={`p-4 rounded-3xl h-20 lg:h-24 transition-all duration-200 ease-in-out ${currentLevel === 12 ? 'bg-gray-600 cursor-not-allowed' : 'bg-gray-700 hover:bg-gray-600'
-            }`}
-          disabled={currentLevel === 12}
+          className={`p-4 rounded-3xl h-20 lg:h-24 transition-all duration-200 ease-in-out ${currentLevel === levelDataX4.length ? "bg-gray-600 cursor-not-allowed" : "bg-gray-700 hover:bg-gray-600"}`}
+          disabled={currentLevel === levelDataX4.length}
         >
-          {currentLevel < 12 ? currentLevel + 1 : ''}
+          {currentLevel < levelDataX4.length ? currentLevel + 1 : ""}
         </button>
       </div>
-    
 
+      {/* NotifyBot Component */}
       <NotifyBot />
-      <LevelTransection matrix={2} currentLevel={currentLevel} /> {/* Pass currentLevel to LevelTransection */}
-      </Suspense>
-
+      {/* Level Transaction History */}
+      <LevelTransection matrix={2} currentLevel={currentLevel} />
+    </Suspense>
   );
 };
 

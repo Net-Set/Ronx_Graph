@@ -4,6 +4,12 @@ import { useRouter } from 'next/navigation'; // Ensure you are using the correct
 import { useSmartContract } from '@/components/SmartContract/SmartContractProvider';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowUp } from '@fortawesome/free-solid-svg-icons';
+import client from '@/lib/apolloClient';
+import { GET_USERS } from '@/graphql/PlatformRecentActivity/queries';
+import { ApolloQueryResult } from '@apollo/client';
+
+
+
 const PlatformRecentActivity: React.FC = () => {
   const router = useRouter(); // Use the router from 'next/navigation'
   const { getPlatformRecentActivity, getUserRecentActivityUserMatrics } = useSmartContract();
@@ -11,45 +17,49 @@ const PlatformRecentActivity: React.FC = () => {
   const [recentUser, setRecentUser] = useState(0);
   const [activities, setActivities] = useState<any[]>([]);
 
-  useEffect(() => {
-    const fetchPlatformActivity = async () => {
-      try {
-        const data = await getPlatformRecentActivity();
-        console.log("test data platformUser:", data?.toString()); // Log entire string data
+   // Fetch platform recent activity data in the specified format
+   useEffect(() => {
+  // Fetch platform activity data and format it
+  const fetchPlatformActivity = async () => {
+    try {
+      const { data } = await client.query({ query: GET_USERS }) as ApolloQueryResult<any>;
+      if (data) {
+        const userActivities: Record<string, any> = {};
 
-        if (data) {
-          // Split the string by new lines to separate each activity
-          const activityLines = data.split("\n");
+        // Combine registrations and upgrades
+        [...data.registrations, ...data.upgrades].forEach((activity: any) => {
+          const userId =  activity.user;
+          const action = activity.userId ? "Registration" : "Upgrade";
+          const timestamp = parseInt(activity.blockTimestamp, 10) * 1000;
 
-          // Extract user activity details from each line using regex
-          const formattedActivities = activityLines.map((line: string) => {
-            const regex = /User ID: (\d+) - Action: ([\w\s]+) - Matrix: (\d+) - Level: (\d+) - Timestamp: (\d+)/;
-            const match = line.match(regex);
+          if (!userActivities[userId] || userActivities[userId].timestamp < timestamp) {
+            userActivities[userId] = {
+              userId,
+              action,
+              matrix: activity.matrix || "1",
+              level: activity.level || "1",
+              timestamp,
+            };
+          }
+        });
 
-            if (match) {
-              const [, userId, action, matrix, level, timestamp] = match;
+        const formattedActivities = Object.values(userActivities)
+          .sort((a: any, b: any) => b.timestamp - a.timestamp)
+          .map((activity: any) => ({
+            ...activity,
+            timestamp: new Date(activity.timestamp).toLocaleString(),
+          }));
 
-              return {
-                userId,
-                action,
-                matrix,
-                level,
-                timestamp: new Date(parseInt(timestamp, 10) * 1000).toLocaleString(), // Convert to readable date
-              };
-            } else {
-              return null; // In case there's a mismatch, skip it
-            }
-          }).filter(Boolean); // Remove any null entries
-
-          setActivities(formattedActivities);
-        }
-      } catch (error) {
-        console.error('Error fetching platform activity:', error);
+        setActivities(formattedActivities);
       }
-    };
+    } catch (error) {
+      console.error('Error fetching platform activity:', error);
+    }
+  };
+
 
     fetchPlatformActivity();
-  }, [getPlatformRecentActivity]);
+  }, []);
 
   const handleRegisterBUSD = (userId: string) => {
     router.push(`/retro?userId=${userId}`); // Use userId in the URL
@@ -89,19 +99,15 @@ const PlatformRecentActivity: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {activities.slice(0, 7).map((activity, index) => (
-                  <tr key={index} className="hover:bg-gray-700">
-                    <td className="px-4 py-2">
-                    <a onClick={() => handleRegisterBUSD(activity.userId)} className="text-blue-500 cursor-pointer">
-                        {`ID ${activity.userId}`}
-                      </a>
-                    </td>
-                    <td className="px-4 py-2">{activity.action}</td>
-                    <td className="px-4 py-2">{activity.matrix}</td>
-                    <td className="px-4 py-2">{activity.level}</td>
-                    <td className="px-4 py-2">{activity.timestamp}</td>
-                  </tr>
-                ))}
+              {activities.map((activity, index) => (
+                    <tr key={index} className="hover:bg-gray-700">
+                      <td className="px-4 py-2">{activity.userId}</td>
+                      <td className="px-4 py-2">{activity.action}</td>
+                      <td className="px-4 py-2">{activity.matrix}</td>
+                      <td className="px-4 py-2">{activity.level}</td>
+                      <td className="px-4 py-2">{activity.timestamp}</td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>

@@ -2,60 +2,99 @@
 
 import React, { useEffect, useState } from 'react';
 import { useSmartContract } from '@/components/SmartContract/SmartContractProvider'; // Import the contract context
-import { BigNumber } from 'ethers';
-import {CopyIcon} from '@chakra-ui/icons'
-
-type MatrixDataRow = [
-  string, // User ID
-  string, // User Address
-  number, // Timestamp
-  number, // Matrix
-  number, // Level
-  string, // User Type
-  number, // Cycle Number
-  BigNumber // Token Amount
-];
+import { CopyIcon, ExternalLinkIcon } from '@chakra-ui/icons';
+import client from '@/lib/apolloClient';
+import { ApolloQueryResult } from '@apollo/client';
+import { GETLEVELTRANSACTION } from '@/graphql/GetLevelTransactionTable_LevelSlider/queries';
+import { useWallet } from '@/app/context/WalletContext';
+import Image from 'next/image';
+import Person from '@/assets/icons/profile.png';
+import Recycle from '@/assets/icons/recycle_icon.jpg';
+import { GET_WALLET_ADDRESS_TO_ID } from '@/graphql/WalletAddress_To_Id/queries';
 
 interface LevelTransectionProps {
   currentLevel: number;
   matrix: number; // Accept matrix as a prop
 }
 
-function LevelTransection({ currentLevel, matrix }: LevelTransectionProps) {
-  const { getDetailedMatrixInfo } = useSmartContract();
+const levelDataX4 = [
+  { level: 1, cost: 0.0001 },
+  { level: 2, cost: 0.0002 },
+  { level: 3, cost: 0.0004 },
+  { level: 4, cost: 0.0008 },
+  { level: 5, cost: 0.0016 },
+  { level: 6, cost: 0.0032 },
+  { level: 7, cost: 0.0064 },
+  { level: 8, cost: 0.0128 },
+  { level: 9, cost: 0.0256 },
+  { level: 10, cost: 0.0512 },
+  { level: 11, cost: 0.1024 },
+  { level: 12, cost: 0.2048 },
+];
+
+interface MatrixDataRow {
+  user: string; //this is user wallet address
+  transactionHash: string;
+  blockTimestamp: string;
+  matrix: number;
+  level: number;
+  place: number;
+}
+
+const LevelTransection: React.FC<{ currentLevel: number; matrix: number }> = ({ currentLevel, matrix }) => {
+  const walletAddress = useWallet();
+  const staticAddress = walletAddress ? walletAddress.walletAddress : null;
+  const userWalletAddress = staticAddress;
+
   const [matrixData, setMatrixData] = useState<MatrixDataRow[]>([]);
+  const [userIds, setUserIds] = useState<Record<string, string>>({});
 
-  // Function to fetch and format matrix data
-  const fetchMatrixData = async () => {
-    try {
-      // Fetch matrix data based on the current level and matrix passed as a prop
-      const data = await getDetailedMatrixInfo(1, matrix, currentLevel);
-      console.log('Matrix data:', data);
-
-      // Format the matrix data
-      const formattedData = data.map((row: MatrixDataRow) => {
-        // Map through each row and modify the Matrix column value (row[3])
-        return row.map((cell, index) => {
-          if (index === 3) {
-            // Modify the matrix value (1 -> x3, 2 -> x4)
-            return cell === 1 ? 'x3' : cell === 2 ? 'x4' : cell;
-          }
-          return BigNumber.isBigNumber(cell) ? cell.toString() : cell;
-        }) as MatrixDataRow;
-      });
-
-      // Update state with the formatted matrix data
-      setMatrixData(formattedData || []);
-    } catch (error) {
-      console.error('Error fetching matrix data:', error);
-      setMatrixData([]); // Clear the data in case of error
-    }
-  };
-
-  // useEffect hook to fetch data when the component mounts or when the currentLevel or matrix changes
+  // Fetch Transactions table data fetch using walletAddress matrix and level
   useEffect(() => {
-    fetchMatrixData();
-  }, [currentLevel, matrix]); // Depend on both currentLevel and matrix
+    const fetchTransactions = async () => {
+      try {
+        const { data } = await client.query({
+          query: GETLEVELTRANSACTION(staticAddress || '', matrix, currentLevel),
+          variables: { userId: userWalletAddress?.toString() || '', matrix, level: currentLevel }
+        }) as ApolloQueryResult<any>;
+        if (data) {
+          setMatrixData(data.newUserPlaces);
+        }
+      } catch (error) {
+        console.error('Error fetching transactions:', error);
+      }
+    };
+    fetchTransactions();
+  }, [userWalletAddress, matrix, currentLevel]);
+
+  useEffect(() => {
+    const fetchUserIds = async () => {
+      try {
+        const userIdResponses = await Promise.all(
+          matrixData.map((row) =>
+            client.query({
+              query: GET_WALLET_ADDRESS_TO_ID,
+              variables: { wallet: row.user },
+            })
+          )
+        );
+
+        const userIdsMap: Record<string, string> = {};
+        userIdResponses.forEach((response, index) => {
+          const userId = response.data.registrations[0]?.userId;
+          if (userId) {
+            userIdsMap[matrixData[index].user] = userId;
+          }
+        });
+
+        setUserIds(userIdsMap);
+      } catch (error) {
+        console.error('Error fetching user IDs:', error);
+      }
+    };
+
+    fetchUserIds();
+  }, [matrixData]);
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -67,45 +106,61 @@ function LevelTransection({ currentLevel, matrix }: LevelTransectionProps) {
 
   return (
     <div className="overflow-x-auto bg-[#121212] p-6 rounded-lg shadow-md">
-    <table className="min-w-full bg-[#1f2937] border border-gray-700 text-white">
-      <thead>
-        <tr className="bg-[#2c2f38]">
-          <th className="px-4 py-2 border-b border-gray-600">User ID</th>
-          <th className="px-4 py-2 border-b border-gray-600">Wallet Address</th>
-          <th className="px-4 py-2 border-b border-gray-600">Timestamp</th>
-          <th className="px-4 py-2 border-b border-gray-600">Matrix</th>
-          <th className="px-4 py-2 border-b border-gray-600">Level</th>
-          <th className="px-4 py-2 border-b border-gray-600">User Type</th>
-          <th className="px-4 py-2 border-b border-gray-600">Cycle Number</th>
-          <th className="px-4 py-2 border-b border-gray-600">Token Amount</th>
-        </tr>
-      </thead>
-      <tbody>
-        {matrixData.map((row, index) => (
-          <tr key={index} className="hover:bg-[#3a3f48]">
-            <td className="px-4 py-2 border-b border-gray-600">{row[0]}</td>
-            <td className="px-4 py-2 border-b border-gray-600">
-              {row[1]}
-              <button
-                onClick={() => handleCopy(row[1])}
-                className="ml-2 text-white hover:text-blue-700"
-              >
-                <CopyIcon />
-              </button>
-            </td>
-            <td className="px-4 py-2 border-b border-gray-600">{new Date(row[2] * 1000).toLocaleString()}</td>
-            <td className="px-4 py-2 border-b border-gray-600">{row[3]}</td>
-            <td className="px-4 py-2 border-b border-gray-600">{row[4]}</td>
-            <td className="px-4 py-2 border-b border-gray-600">{row[5]}</td>
-            <td className="px-4 py-2 border-b border-gray-600">{row[6]}</td>
-            <td className="px-4 py-2 border-b border-gray-600">{row[7].toString()}</td>
+      <table className="min-w-full bg-[#1f2937] border border-gray-700 text-white">
+        <thead>
+          <tr className="bg-[#2c2f38]">
+            <th className="px-4 py-2 border-b border-gray-600">Type</th>
+            <th className="px-4 py-2 border-b border-gray-600">ID</th>
+
+            <th className="px-4 py-2 border-b border-gray-600">User</th>
+            <th className="px-4 py-2 border-b border-gray-600">Timestamp</th>
+            <th className="px-4 py-2 border-b border-gray-600">Matrix</th>
+            <th className="px-4 py-2 border-b border-gray-600">Level</th>
+            <th className="px-4 py-2 border-b border-gray-600">Place</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
+        </thead>
+        <tbody>
+          {matrixData.map((row, index) => (
+            <tr key={index} className="hover:bg-[#3a3f48]">
+              <td className="px-4 py-2 border-b border-gray-600" style={{ color: row.place === 3 ? 'green' : 'inherit' }}>
+                {row.place === 3 ? (
+                  <>
+                    <Image src={Recycle} alt="Recycle" width={20} height={20} />
+                  </>
+                ) : (
+                  <Image src={Person} alt="Person" width={20} height={20} />
+                )}
+              </td>
+              <td className="px-4 py-2 border-b border-gray-600">                {userIds[row.user] ? userIds[row.user] : 'Loading...'}
+              </td>
+              <td className="px-4 py-2 border-b border-gray-600">
+                {row.user}
+                <button
+                  onClick={() => handleCopy(row.user)}
+                  className="ml-2 text-white hover:text-blue-700"
+                >
+                  <CopyIcon />&nbsp;
+                </button>
+                <a
+                  href={`https://testnet.bscscan.com/tx/${row.transactionHash}`}
+                  target="_blank"
+                  title='View on BscScan'
+                  rel="noopener noreferrer"
+                  className="text-blue-500 hover:text-blue-700"
+                >
+                  <ExternalLinkIcon />
+                </a>
+              </td>
+              <td className="px-4 py-2 border-b border-gray-600">{new Date(parseInt(row.blockTimestamp) * 1000).toLocaleString()}</td>
+              <td className="px-4 py-2 border-b border-gray-600">{matrix === 1 ? "x3" : "x4"}</td>
+              <td className="px-4 py-2 border-b border-gray-600">{row.level}</td>
+              <td className="px-4 py-2 border-b border-gray-600" style={{ color: row.place === 3 ? 'green' : 'inherit' }}>{row.place === 3 ? 'recycle' : `${levelDataX4.find(level => level.level === row.level)?.cost} BNB`}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
 export default LevelTransection;
-

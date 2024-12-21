@@ -1,83 +1,97 @@
 import React, { useEffect, useState } from 'react';
 import Image from '@/components/ui/image';
 import BannerSecond from '@/assets/images/BannerSecond.png';
-import { useSmartContract } from '@/components/SmartContract/SmartContractProvider';
+import client from '@/lib/apolloClient';
+import { GET_USERS } from '@/graphql/PlatformRecentActivity/queries';
+import { GET_ACTIVE_USER } from '@/graphql/GetTotalNumberActive/queries';
+import { ApolloQueryResult } from '@apollo/client';
+import { GET_WALLET_ADDRESS_TO_ID } from '@/graphql/WalletAddress_To_Id/queries';
 
 const ActivitySection: React.FC = () => {
-  const { getUserRecentActivityUserMatrics, getPlatformRecentActivity } = useSmartContract();
   const [totalUser, setTotalUser] = useState(0);
   const [recentUser, setRecentUser] = useState(0);
   const [activities, setActivities] = useState<any[]>([]);
 
-  // Fetch getUserRecentActivityUserMatrics data 
-  useEffect(() => {
-    const fetchUserMetrics = async () => {
-      const data = await getUserRecentActivityUserMatrics(24, "hour");
+  // Fetch platform activity data and format it
+  const fetchPlatformActivity = async () => {
+    try {
+      const { data } = await client.query({ query: GET_USERS }) as ApolloQueryResult<any>;
       if (data) {
-        const totalUsers = data.totalUsers?.toNumber() || 0;
-        const recentUsers = data.recentUsers?.toNumber() || 0;
+        const allActivities = [...data.registrations, ...data.upgrades].map((activity: any) => {
+          const timestamp = parseInt(activity.blockTimestamp, 10) * 1000;
+          return {
+            userId: activity.user,
+            action: activity.userId ? "Registration" : "Upgrade",
+            matrix: activity.matrix, // Default to "1" if no matrix is provided
+            level: activity.level || "1", // Default to "1" if no level is provided
+            timestamp,
+          };
+        });
+
+        const formattedActivities = await Promise.all(
+          allActivities
+            .sort((a: any, b: any) => b.timestamp - a.timestamp) // Sort by most recent activity
+            .map(async (activity: any) => {
+              // Fetch wallet address to ID
+              const walletData = await client.query({
+                query: GET_WALLET_ADDRESS_TO_ID,
+                variables: { wallet: activity.userId },
+              }) as ApolloQueryResult<any>;
+
+              const walletId = walletData.data?.registrations?.[0]?.userId || activity.userId;
+
+              return {
+                ...activity,
+                userId: walletId, // Update with the wallet ID
+                timestamp: new Date(activity.timestamp).toLocaleString(),
+              };
+            })
+        );
+
+        setActivities(formattedActivities);
+      }
+    } catch (error) {
+      console.error('Error fetching platform activity:', error);
+    }
+  };
+
+  // Fetch active user data
+  const fetchActiveUser = async () => {
+    try {
+      const { data } = await client.query({ query: GET_ACTIVE_USER }) as ApolloQueryResult<any>;
+      if (data) {
+        const totalUsers = data.registrations.length;
+        const recentUsers = data.registrations.filter((user: any) => {
+          const currentTime = new Date().getTime();
+          const userTime = new Date(parseInt(user.blockTimestamp, 10) * 1000).getTime();
+          return currentTime - userTime < 24 * 60 * 60 * 1000; // 24 hours
+        }).length;
+
         setTotalUser(totalUsers);
         setRecentUser(recentUsers);
-      } else {
-        setTotalUser(0);
-        setRecentUser(0);
       }
-    };
-    fetchUserMetrics();
-  }, [getUserRecentActivityUserMatrics]);
+    } catch (error) {
+      console.error('Error fetching active user:', error);
+    }
+  };
 
-  // Fetch platform recent activity data in the specified format
   useEffect(() => {
-    const fetchPlatformActivity = async () => {
-      try {
-        const data = await getPlatformRecentActivity();
-        console.log("test data platformUser:", data?.toString()); // Log entire string data
-  
-        if (data) {
-          // Split the string by new lines to separate each activity
-          const activityLines = data.split("\n");
-  
-          // Extract user activity details from each line using regex
-          const formattedActivities = activityLines.map((line: string) => {
-            const regex = /User ID: (\d+) - Action: ([\w\s]+) - Matrix: (\d+) - Level: (\d+) - Timestamp: (\d+)/;
-            const match = line.match(regex);
-  
-            if (match) {
-              const [, userId, action, matrix, level, timestamp] = match;
-  
-              return {
-                userId,
-                action,
-                matrix,
-                level,
-                timestamp: new Date(parseInt(timestamp, 10) * 1000).toLocaleString(), // Convert to readable date
-              };
-            } else {
-              return null; // In case there's a mismatch, skip it
-            }
-          }).filter(Boolean); // Remove any null entries
-  
-          setActivities(formattedActivities);
-        }
-      } catch (error) {
-        console.error('Error fetching platform activity:', error);
-      }
-    };
-  
     fetchPlatformActivity();
-  }, [getPlatformRecentActivity]);
-  
+    fetchActiveUser();
+  }, []);
 
   return (
     <section className="my-6">
       <div>
-        <div className="pb-9 w-full mx-auto text-center text-white px-4 sm:px-6 lg:px-8 bg-black bg-opacity-60 rounded-lg"
+        <div
+          className="pb-9 w-full mx-auto text-center text-white px-4 sm:px-6 lg:px-8 bg-black bg-opacity-60 rounded-lg"
           style={{
             backgroundImage: `url(${BannerSecond.src})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
-          }}>
+          }}
+        >
           <h2 className="m-6 pt-7 text-4xl font-bold mb-4">Platform Recent Activity</h2>
           <p className="text-lg mb-8">Real-time global events of the RonX Platform</p>
           <div className="bg-black rounded-lg overflow-hidden shadow-lg">
@@ -97,7 +111,7 @@ const ActivitySection: React.FC = () => {
                     <tr key={index} className="hover:bg-gray-700">
                       <td className="px-4 py-2">{activity.userId}</td>
                       <td className="px-4 py-2">{activity.action}</td>
-                      <td className="px-4 py-2">{activity.matrix}</td>
+                      <td className="px-4 py-2">{activity.matrix == "1" ? "x3" : activity.matrix == "2" ? "x4" : "x3 & x4"}</td>
                       <td className="px-4 py-2">{activity.level}</td>
                       <td className="px-4 py-2">{activity.timestamp}</td>
                     </tr>
@@ -108,11 +122,6 @@ const ActivitySection: React.FC = () => {
           </div>
           <div className="text-center text-white mt-10">
             <h2 className="text-3xl font-bold mb-4">Partner Results</h2>
-            {/* <p>All data is stored in the blockchain in the public domain and can be verified!<br />
-              Contract address eth: 0x5acc84a3e955Bdd76467d3348077d003f00fFB97<br />
-              Contract address tron: TREbha3Jj6TrpT7e6Z5ukh3NRhyxHsmMug<br />
-              Contract address busd: 0xb2e1eD3394AC2191313A4a9Fcb5B52C4d3c046eF
-            </p> */}
             <div className="mt-8 flex flex-col sm:flex-row justify-around">
               <div className="mb-6 sm:mb-0">
                 <span>Member Total</span>

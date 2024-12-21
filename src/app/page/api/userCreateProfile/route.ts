@@ -4,7 +4,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 export async function POST(req: Request) {
   try {
     // Parse the request body
-    const { userWalletAddress, profilePic, personalLink, username } = await req.json();
+    const { userWalletAddress, profilePic, personalLink, username, newUserId } = await req.json();
 
     // Validate input fields
     if (!userWalletAddress || !profilePic || !personalLink || !username) {

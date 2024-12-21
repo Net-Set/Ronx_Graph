@@ -1,40 +1,44 @@
 'use client';
-
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useSmartContract } from '@/components/SmartContract/SmartContractProvider';
 import NotifyBot from '@/components/notifybot/notifybot';
 import LevelCard from './x3LevelCard'; // Ensure the path is correct
 import { useWallet } from '@/app/context/WalletContext';
+import client from '@/lib/apolloClient';
+import { ApolloQueryResult } from '@apollo/client';
+import { getUserPlacesQuery } from '@/graphql/Grixdx3Level_Partner_and_Cycle_Count_and_Active_Level/queries';
+import { x3Activelevelpartner } from '@/graphql/level_Ways_Partner_data_x3/queries';
 
 const levelDataX3 = [
-  { level: 1, cost: 5 },
-  { level: 2, cost: 10 },
-  { level: 3, cost: 20 },
-  { level: 4, cost: 40 },
-  { level: 5, cost: 80 },
-  { level: 6, cost: 160 },
-  { level: 7, cost: 320 },
-  { level: 8, cost: 640 },
-  { level: 9, cost: 1250 },
-  { level: 10, cost: 2500 },
-  { level: 11, cost: 5000 },
-  { level: 12, cost: 9900 },
+  { level: 1, cost: 0.0001 },
+  { level: 2, cost: 0.0002 },
+  { level: 3, cost: 0.0004 },
+  { level: 4, cost: 0.0008 },
+  { level: 5, cost: 0.0016 },
+  { level: 6, cost: 0.0032 },
+  { level: 7, cost: 0.0064 },
+  { level: 8, cost: 0.0128 },
+  { level: 9, cost: 0.0256 },
+  { level: 10, cost: 0.0512 },
+  { level: 11, cost: 0.1024 },
+  { level: 12, cost: 0.2048 },
 ];
 
 const X3Grid: React.FC = () => {
   const walletContext = useWallet();
   const staticAddress = walletContext ? walletContext.walletAddress : null;
+  const userWalletAddress = staticAddress;
+
   const {
     getTotalCycles,
-    userX3Matrix,
-    usersActiveX3Levels,
     getPartnerCount,
     getUserIdsWalletaddress,
   } = useSmartContract();
 
   const [cyclesData, setCyclesData] = useState<number[]>([]);
   const [partnersData, setPartnersData] = useState<number[]>([]);
+  const [reminderData, setReminderData] = useState<number[]>([]);  // New state to store remainder data
   const [isLevelActive, setIsLevelActive] = useState<boolean[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -60,24 +64,60 @@ const X3Grid: React.FC = () => {
     fetchUserAddress();
   }, [userId, getUserIdsWalletaddress, staticAddress]);
 
-  // Fetch active levels, cycles, and partners data
+  // Fetch active levels and partner counts from both GraphQL APIs
   useEffect(() => {
-    if (!userAddress) return;
-
-    const fetchData = async () => {
+    const fetchActiveLevelsAndPartnerCounts = async () => {
       try {
         setIsLoading(true);
 
-        const [activeLevels, updatedCycles, partnersCounts] = await Promise.all([
-          Promise.all(levelDataX3.map((data) => usersActiveX3Levels(userAddress, data.level))),
-          Promise.all(levelDataX3.map((data) => getTotalCycles(userAddress, 1, data.level))),
-          Promise.all(levelDataX3.map((data) => getPartnerCount(userAddress, 1, data.level))),
-        ]);
+        // Fetch active levels
+        const activeLevelsResponse = await client.query({
+          query: getUserPlacesQuery,
+          variables: { walletAddress: userWalletAddress },
+        });
 
-        setIsLevelActive(activeLevels.map((level) => level || false));
-        setCyclesData(updatedCycles.map((cycles) => cycles || 0));
-        setPartnersData(partnersCounts.map((count) => count || 0));
+        const activeLevels = new Array(12).fill(false);
+        activeLevels[0] = true; // Ensure level 1 is always active
 
+        if (activeLevelsResponse.data && activeLevelsResponse.data.upgrades) {
+          activeLevelsResponse.data.upgrades.forEach((upgrade: { level: number }) => {
+            if (upgrade.level >= 1 && upgrade.level <= 12) {
+              activeLevels[upgrade.level - 1] = true;
+            }
+          });
+        }
+
+        // Fetch partners' data from x3Activelevelpartner query for all levels
+        const partnersResponse = await Promise.all(
+          levelDataX3.map((data) =>
+            client.query({
+              query: x3Activelevelpartner,
+              variables: { walletAddress: userWalletAddress, level: data.level },
+            })
+          )
+        );
+
+        // Map partner counts based on the response for each level
+        const partnerCounts = partnersResponse.map((response, index) => {
+          const partnersAtLevel = response.data.newUserPlaces || [];
+          return partnersAtLevel.length; // Count number of partners at this level
+        });
+
+        // Calculate cycles and remainder for each level
+        const cycleData = partnerCounts.map((partnerCount) => {
+          const fullCycles = Math.floor(partnerCount / 3);  // Full cycles
+          const remainder = partnerCount % 3;  // Remaining partners that don't complete a full cycle
+          return { fullCycles, remainder };
+        });
+
+        // Separate full cycles, remainders, and partner counts
+        const updatedCycles = cycleData.map((data) => data.fullCycles);
+        const updatedRemainders = cycleData.map((data) => data.remainder);
+
+        setCyclesData(updatedCycles); // Store full cycles
+        setReminderData(updatedRemainders); // Store remainder (extra partners)
+        setPartnersData(partnerCounts); // Store the total partner counts
+        setIsLevelActive(activeLevels);
         setIsLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -85,8 +125,10 @@ const X3Grid: React.FC = () => {
       }
     };
 
-    fetchData();
-  }, [userAddress, usersActiveX3Levels, getTotalCycles, getPartnerCount]);
+    if (userAddress) {
+      fetchActiveLevelsAndPartnerCounts();
+    }
+  }, [userAddress, userWalletAddress, getTotalCycles, getPartnerCount]);
 
   if (isLoading) {
     return <div className="text-center text-white">Loading levels...</div>;
@@ -103,10 +145,10 @@ const X3Grid: React.FC = () => {
                 key={data.level}
                 level={data.level}
                 cost={data.cost}
-                partners={partnersData[index]}
-                cycles={cyclesData[index]}
-                partnersCount={partnersData[index]}
-                isActive={isLevelActive[index]}
+                partners={partnersData[index]} // Total partners count
+                cycles={cyclesData[index]} // Full cycles
+                partnersCount={reminderData[index]} // Remainder (extra partners)
+                isActive={isLevelActive[index]} // Dynamically set based on fetched data
               />
             ))}
           </div>

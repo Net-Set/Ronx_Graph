@@ -2,7 +2,7 @@
 import React from 'react';
 
 interface LevelHeaderProps {
-  userid: number;
+  userid: string;
   level: number;
   uplineId: number;
 }

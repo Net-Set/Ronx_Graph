@@ -1,6 +1,12 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
+
+declare global {
+  interface Window {
+    ethereum: any;
+  }
+}
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FaUsers, FaSyncAlt, FaCoins } from 'react-icons/fa';
 import { useSmartContract } from '@/components/SmartContract/SmartContractProvider';
@@ -9,7 +15,6 @@ import CONTRACT_ABI from '@/components/SmartContract/abi.json';
 import { ethers } from 'ethers';
 import { Web3Provider } from '@ethersproject/providers';
 import { CONTRACT_ADDRESS } from '@/config/constants';
-
 
 interface LevelCardProps {
   level: number;
@@ -21,10 +26,18 @@ interface LevelCardProps {
   isActive: boolean;
 }
 
-const LevelCard: React.FC<LevelCardProps> = ({ level, cost, partners, cycles, partnersCount, partnersCountlayer2, isActive }) => {
+const LevelCard: React.FC<LevelCardProps> = ({
+  level,
+  cost,
+  partners,
+  cycles,
+  partnersCount,
+  partnersCountlayer2,
+  isActive,
+}) => {
   const router = useRouter();
   const { walletAddress } = useWallet();
-  const { getUserIdsWalletaddress } = useSmartContract();
+  const { getUserIdsWalletaddress,transferTokens } = useSmartContract();
   const searchParams = useSearchParams();
 
   const userId = searchParams.get('userId');
@@ -41,38 +54,51 @@ const LevelCard: React.FC<LevelCardProps> = ({ level, cost, partners, cycles, pa
   }, [userId, getUserIdsWalletaddress, walletAddress]);
 
 
-  const handleActivate = async (clickedLevel: number) => {
     try {
       const provider = new Web3Provider(window.ethereum);
-      await provider.send("eth_requestAccounts", []); // Request account access
+      await provider.send('eth_requestAccounts', []);
       const signer = provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
+
      
+      // Transfer tokens if needed before activation
+      const tokenVerification = await transferTokens(CONTRACT_ADDRESS, cost.toString());
+      console.log('Token Verification:', tokenVerification);
 
-      // Call the contract to activate the level
-      const tx = await contract.buyNewLevel(2, clickedLevel);
-      await tx.wait(); // Wait for the transaction to complete
+      const tx = await contract.buyNewLevel(2, level);
+      await tx.wait();
+
       console.log('Level activated successfully:', tx);
-      alert(`Level ${clickedLevel} activated successfully! Transaction Hash: ${tx.hash}`);
+      alert(`Level ${level} activated successfully! Transaction Hash: ${tx.hash}`);
 
-      // Optional: Refresh the page or data
+      router.push(`/retro/levelslider/x4slider?level=${level}&cost=${cost}&partners=${partners}&cycles=${cycles || 0}`);
       router.refresh();
     } catch (error) {
-      console.error("Error activating level:", error);
+      console.error('Error activating level:', error);
     }
+  };
+
+  const handleActiveCard = () => {
+    router.push(`/retro/levelslider/x4slider?level=${level}&cost=${cost}&partners=${partners}&cycles=${cycles || 0}`);
   };
 
   const renderPartnerCircles = () => (
     <div className="flex flex-col items-center space-y-2">
       <div className="flex space-x-2">
         {Array.from({ length: 2 }).map((_, i) => (
-          <div key={`top-${i}`} className={`w-10 h-10 rounded-full ${i < partnersCount ? 'bg-blue-500' : 'bg-gray-400'}`} />
+          <div
+            key={`top-${i}`}
+            className={`w-10 h-10 rounded-full ${i < partnersCount ? 'bg-blue-500' : 'bg-gray-400'}`}
+          />
         ))}
       </div>
       <div className="flex space-x-2">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={`bottom-${i}`} className={`w-10 h-10 rounded-full ${i < partnersCountlayer2 ? 'bg-blue-500' : 'bg-gray-400'}`} />
+          <div
+            key={`bottom-${i}`}
+            className={`w-10 h-10 rounded-full ${i < partnersCountlayer2 ? 'bg-blue-500' : 'bg-gray-400'}`}
+          />
         ))}
       </div>
     </div>
@@ -81,15 +107,21 @@ const LevelCard: React.FC<LevelCardProps> = ({ level, cost, partners, cycles, pa
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <div
-        className={`relative bg-blue-600 p-4 rounded-lg text-white text-center border border-blue-500 shadow-lg cursor-pointer hover:shadow-xl transition-shadow duration-300 ${
-          isActive ? 'opacity-100' : 'opacity-50'
-        }`}
-        onClick={() => handleActivate(level)}
+        className={`relative bg-blue-600 p-4 rounded-lg text-white text-center border border-blue-500 shadow-lg ${
+          isActive ? 'cursor-pointer hover:shadow-xl' : 'cursor-not-allowed opacity-50'
+        } transition-shadow duration-300`}
+        onClick={isActive ? handleActiveCard : handleActivate}
       >
         {!isActive && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white text-2xl font-bold">
-            Inactive
-          </div>
+          <button
+            className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleActivate();
+            }}
+          >
+            InActivate
+          </button>
         )}
         <div className="absolute top-2 right-2 text-yellow-300">
           <FaCoins className="inline mr-1" /> {cost}
@@ -105,6 +137,9 @@ const LevelCard: React.FC<LevelCardProps> = ({ level, cost, partners, cycles, pa
           </div>
         </div>
       </div>
+  
+  
+        
     </Suspense>
   );
 };

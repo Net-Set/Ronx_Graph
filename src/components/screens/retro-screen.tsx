@@ -8,8 +8,10 @@ import Dashboard from "@/components/dashboard/dashboard";
 import PriceFeedSlider from "@/components/ui/live-price-feed";
 import { priceFeedData } from "@/data/static/price-feed-retro";
 import Image from "@/components/ui/image";
+import ActivitySection from '@/components/landingpage/components/ActivitySection';
 import { authorData } from "@/data/static/author";
 import ComparisonChart from "@/components/ui/chats/retro-comparision-chart";
+
 import Profile from "@/components/profile/profile";
 import Avatar from "@/components/ui/avatar";
 
@@ -33,7 +35,7 @@ export default function RetroScreen() {
       </div>
       <Dashboard />
       <Program />
-      <TransactionTable />
+      <ActivitySection />
     </Suspense>
   );
 }

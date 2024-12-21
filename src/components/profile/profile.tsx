@@ -10,7 +10,7 @@ import userBanner from '@/assets/images/userBanner.png';
 
 interface User {
   _id: string;
-  userid: number;
+  userId: number;
   userWalletAddress: string;
   profilePic: string;
   personalLink: string;
@@ -125,42 +125,42 @@ export default function Profile() {
           />
         </div>
 
-        <div className="shrink-0 border-dashed border-gray-200 dark:border-gray-700 md:w-72 ltr:md:border-r md:ltr:pr-7 rtl:md:border-l md:rtl:pl-7 lg:ltr:pr-10 lg:rtl:pl-10">
-          <div className="mx-auto mt-5 p-4 rounded-lg bg-white shadow-card dark:bg-light-dark md:mx-0 xl:mt-6">
-            <h3>
-              User Details:
-              <button
-                onClick={() => setIsEditing(true)}
-                className="text-gray-500 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
-              >
-                <FontAwesomeIcon icon={faPencilAlt as IconProp} />
-              </button>
-            </h3>
-            <div className="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
-              <p><strong>ID:</strong> {user?.userid}</p>
-              <p><strong>Username:</strong> {user?.username}</p>
-              <p>
-                <strong>Wallet Address:</strong> 
-                {user?.userWalletAddress ? (
-                  <>
-                    {`${user.userWalletAddress.slice(0, 6)}...${user.userWalletAddress.slice(-4)}`}
-                    <button
-                      onClick={() => copyToClipboard(user.userWalletAddress)}
-                      className="ml-2 text-blue-600 hover:text-blue-800"
-                    >
-                      <FontAwesomeIcon icon={faCopy as IconProp} />
-                    </button>
-                  </>
-                ) : (
-                  'Not Available'
-                )}
-              </p>
-              <p>
-                <strong>Upline Address:</strong> {user?.uplineId}
-              </p>
-            </div>
-          </div>
-        </div>
+
+  {/* User Details Section */}
+  <div className="shrink-0 border-dashed border-gray-200 dark:border-gray-700 md:w-72 ltr:md:border-r md:ltr:pr-7 rtl:md:border-l md:rtl:pl-7 lg:ltr:pr-10 lg:rtl:pl-10">
+    <div className="mx-auto mt-5 p-4 rounded-lg bg-white shadow-card dark:bg-light-dark md:mx-0 xl:mt-6">
+      <h3>
+        User Details:
+        <button
+          onClick={handleEditClick}
+          className="text-gray-500 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+        >
+          <FontAwesomeIcon icon={faPencilAlt as IconProp} />
+        </button>
+      </h3>
+      <div className="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
+        <p>
+          <strong>ID:</strong> {user?.userId}
+        </p>
+        <p>
+          <strong>Username:</strong> {user?.username}
+        </p>
+        <p>
+          <strong>Wallet Address:</strong>{" "}
+          {user?.userWalletAddress
+            ? `${user.userWalletAddress.slice(0, 20)}...`
+            : "Not Available"}
+        </p>
+      </div>
+      <div className="absolute top-2 right-2">
+        <button
+          onClick={handleEditClick}
+          className="text-gray-500 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+        >
+          <i className="fas fa-pencil-alt"></i>
+        </button>
+
+
       </div>
 
       {/* Profile Details */}

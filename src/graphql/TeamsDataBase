@@ -1,0 +1,63 @@
+
+import fetch from 'node-fetch';
+// API endpoint
+const url = "https://api.studio.thegraph.com/query/97225/ronx/version/latest";
+// Your API key
+const apiKey = "57a0da610aba88df199b239c85d04a46"; // Replace with your actual API key
+// Fetch GraphQL query
+async function fetchGraphQL(query, variables = {}) {
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey, // Include API key in the headers
+        },
+        body: JSON.stringify({ query, variables }),
+    });
+    if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    return response.json();
+}
+// GraphQL query to get direct referrals of a given referrer
+const GET_DIRECT_REFERRALS = `
+  query GetDirectReferrals($referrer: String!) {
+    registrations(where: { referrer: $referrer }) {
+      user
+    }
+  }
+`;
+// Function to recursively fetch all referrals
+async function fetchAllReferrals(referrer, visited = new Set()) {
+    // Avoid revisiting already processed addresses
+    if (visited.has(referrer)) return [];
+    visited.add(referrer);
+    try {
+        // Fetch direct referrals
+        const data = await fetchGraphQL(GET_DIRECT_REFERRALS, { referrer });
+        const directReferrals = data.data.registrations.map((reg) => reg.user);
+        // Log the direct referrals of the current referrer
+        console.log(`Direct referrals of ${referrer}:`, directReferrals);
+        // Initialize the team list with the direct referrals
+        let teamList = [...directReferrals];
+        // Recursively fetch referrals for each direct referral
+        for (const referral of directReferrals) {
+            const subTeam = await fetchAllReferrals(referral, visited);
+            teamList = teamList.concat(subTeam);
+        }
+        return teamList;
+    } catch (error) {
+        console.error(`Error fetching referrals for ${referrer}:`, error);
+        return [];
+    }
+}
+
+
+
+// Main function to fetch and display all referrals
+(async () => {
+    const rootUser = "0x625b865f46085E1Fd76Bf4cc8C2F48a7f51392c2"; // Replace with the starting user's address
+    const allReferrals = await fetchAllReferrals(rootUser);
+    console.log(`\nTotal Team Size for ${rootUser}: ${allReferrals.length}`);
+    console.log("Full Referral List:", allReferrals);
+})();
