@@ -40,10 +40,6 @@ const LevelCard: React.FC<LevelCardProps> = ({ level, cost, partners, cycles, pa
     }
   }, [userId, getUserIdsWalletaddress, walletAddress]);
 
-  // const handleCardClick = () => {
-  //   const queryParams = userId ? `&userId=${userId}` : '';
-  //   router.push(`/retro/levelslider/x4slider?level=${level}&cost=${cost}&partners=${partners}&cycles=${cycles || 0}${queryParams}`);
-  // };
 
   const handleActivate = async (clickedLevel: number) => {
     try {
@@ -52,10 +48,7 @@ const LevelCard: React.FC<LevelCardProps> = ({ level, cost, partners, cycles, pa
       const signer = provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
-      // Transfer tokens to the contract
-      // const tokenVerification = await transferTokens(CONTRACT_ADDRESS, "0.0002");
-      // console.log('Token Verification:', tokenVerification);
-      // console.log('Wallet Address:', walletAddress);
+     
 
       // Call the contract to activate the level
       const tx = await contract.buyNewLevel(2, clickedLevel);

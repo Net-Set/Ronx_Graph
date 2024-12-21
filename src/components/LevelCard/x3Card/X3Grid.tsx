@@ -48,7 +48,7 @@ const X3Grid: React.FC = () => {
       if (userId) {
         try {
           const fetchedAddress = await getUserIdsWalletaddress(Number(userId));
-          setUserAddress(fetchedAddress || staticAddress || '');
+          setUserAddress(String(fetchedAddress) || staticAddress || '');
         } catch (error) {
           console.error('Error fetching wallet address for userId:', error);
           setUserAddress(staticAddress || '');

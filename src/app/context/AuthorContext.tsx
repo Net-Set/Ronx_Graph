@@ -1,7 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useWallet } from '@/app/context/WalletContext';
-
 interface User {
   _id: string;
   userid: string;
@@ -63,8 +62,6 @@ export const AuthorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     </AuthorContext.Provider>
   );
 };
-
-
 
 export const useAuthor = () => {
   const context = useContext(AuthorContext);

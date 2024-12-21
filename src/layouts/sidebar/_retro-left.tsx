@@ -4,22 +4,17 @@ import { useEffect, useState } from 'react';
 import cn from 'classnames';
 import AuthorCard from '@/components/ui/author-card';
 import Logo from '@/components/ui/logo';
-import Image from '@/components/ui/image';
 import { MenuItem } from '@/components/ui/collapsible-menu';
-// import Scrollbar from '@/components/ui/scrollbar';
+
 import Button from '@/components/ui/button';
 import { useDrawer } from '@/components/drawer-views/context';
 import { Close } from '@/components/icons/close';
 import { defaultMenuItems } from '@/layouts/sidebar/_menu-items';
 //images
-import AuthorImage from '@/assets/images/author.jpg';
-import ShapeImage from '@/assets/images/sidebar-shape.png';
+
 import { LAYOUT_OPTIONS } from '@/lib/constants';
-
 import { useWallet } from '@/app/context/WalletContext';
-import { set } from 'lodash';
 import { useAuthor } from '@/app/context/AuthorContext';
-
 
 interface User {  
   profilePic: string;
@@ -33,10 +28,9 @@ export default function Sidebar({ className }: { className?: string }) {
   const { closeDrawer } = useDrawer();
   const walletAddress  = useWallet();
   const address = useWallet();
-  console.log("address:", address);
+
   // Access the `address` field within the object, or handle undefined
   const staticAddress = walletAddress ? walletAddress.walletAddress : '';
-  const addressnew = staticAddress;
 
     const layoutOption = '';
   const [username, setusername] = useState<string | null>(null);
@@ -51,64 +45,6 @@ export default function Sidebar({ className }: { className?: string }) {
       setuserids(user.userid);
     } 
   }, [user]);
-
-
-  //     // Fetch profile picture dynamically based on wallet address
-  // const fetchProfileImage = async () => {
-  //   if (!staticAddress) {
-  //     console.warn("Wallet address is not available.");
-  //     return;
-  //   }
-
-  //   try {
-  //     const response = await fetch(`/page/api/users?userWalletAddress=${staticAddress}`);
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       console.log("Fetched Profile Data:", data);
-  //       setUser(data);
-  //       // Ensure `profilePic` exists in the response
-  //       if (data.profilePic) {
-  //         setProfileImage(data.profilePic);
-     
-  //       } else {
-  //         console.warn("Profile picture not found in the response.");
-  //       }
-  //     } else {
-  //       console.error(`Failed to fetch profile picture. Status: ${response.status}`);
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching profile image:", error);
-  //   }
-  // };
-
-  
-  // useEffect(() => {
-  //   fetchProfileImage();
-  // }, [staticAddress]);
-
-
-  useEffect(() => {
-    const fetchUsers = async () => {
-      // try {
-      //   const response = await fetch('/api/users');
-      //   const data = await response.json();
-      //   console.log("Fetched Data:", data);
-
-      //   if (data && data.length > 0) {
-      //     // Assuming the data is an array of users, we fetch the first user for display
-      //     const user = data[0];
-      //     setusername(user?.username);
-      //   }
-      // } catch (error) {
-      //   console.error('Error fetching users:', error);
-      //   setError('Failed to fetch users');
-      // } finally {
-      //   setLoading(false);
-      // }
-    };
-
-    fetchUsers();
-  }, []);
 
   const retroMenu = defaultMenuItems.map((item) => ({
     name: item.name,
@@ -168,17 +104,7 @@ export default function Sidebar({ className }: { className?: string }) {
               />
             ))}
           </div>
-          {/* <div className="relative mt-20 hidden flex-col rounded-lg bg-gray-200 p-6 dark:bg-[#333E59] lg:flex">
-            <div className="-mt-12">
-              <Image src={ShapeImage} alt="Shape image" width={200} />
-            </div>
-            <h2 className="mb-7 mt-5 text-center text-[20px] font-semibold leading-8 text-light-dark dark:text-white">
-              Explore the new Blockchain System
-            </h2>
-            <button className="h-12 rounded-lg bg-brand text-white">
-              Try Now{' '}
-            </button>
-          </div> */}
+         
         </div>
       </div>
     </aside>

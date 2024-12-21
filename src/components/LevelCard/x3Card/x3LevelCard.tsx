@@ -56,11 +56,6 @@ const LevelCard: React.FC<LevelCardProps> = ({ level, cost, partners, cycles, pa
       const signer = provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
-      // Transfer tokens to the contract
-      // const tokenVerification = await transferTokens(CONTRACT_ADDRESS, "0.0002");
-      // console.log('Token Verification:', tokenVerification);
-      // console.log('Wallet Address:', walletAddress);
-
       // Call the contract to activate the level
       const tx = await contract.buyNewLevel(1, clickedLevel);
       await tx.wait(); // Wait for the transaction to complete
