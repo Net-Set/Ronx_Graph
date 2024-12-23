@@ -5,6 +5,9 @@ import client from '@/lib/apolloClient';
 import { ApolloQueryResult } from '@apollo/client';
 import { GET_TOTAL_PARTNER } from '@/graphql/TotalPartner/queries';
 import { GET_DIRECT_REFERRALS } from '@/graphql/GetTeamSize_Through_WalletAddress/queries';
+import axios from 'axios';
+import { x3ActiveLevel } from '@/graphql/x3LevelActiveWalletAddress/queries';
+import { x4ActiveLevel } from '@/graphql/x4LevelActiveWalletAddress/queries';
 
 interface StatCardProps {
   title: string;
@@ -37,6 +40,23 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, increase }) => {
   );
 };
 
+const fetchProfitDataWithAxios = async (referrer: string, program: 'x3' | 'x4') => {
+  try {
+    const response = await axios.get(`/api/${program}userProfit`, {
+      params: { referrer }
+    });
+    const data = response.data;
+    console.log(`${program.toUpperCase()} Profit Data:`, data);
+
+    // Calculate total revenue from levelProfits
+    const totalRevenue = data.levelProfits.reduce((acc: number, levelProfit: { profit: number }) => acc + levelProfit.profit, 0);
+
+    return { totalRevenue };
+  } catch (error) {
+    console.error(`${program.toUpperCase()} Profit Data Error:`, error);
+    return { totalRevenue: 0 }; // Return a default value or handle the error appropriately
+  }
+};
 const Dashboard: React.FC = () => {
   const walletAddress = useWallet();
   const staticAddress = walletAddress ? walletAddress.walletAddress : '';
@@ -44,13 +64,14 @@ const Dashboard: React.FC = () => {
   console.log('staticAddress #12:', userWalletAddress);
 
   const searchParams = useSearchParams();
-  const userId = searchParams.get('userId');
+  const userId = searchParams ? searchParams.get('userId') : null;
 
   const [currentPartner, setcurrentPartner] = useState<(number | null)[]>(Array(levels.length).fill(null));
   const [cyclesData, setCyclesData] = useState<(number | null)[]>(Array(levels.length).fill(null));
   const [partnersData, setPartnersData] = useState<number>(0);
   const [teamSize, setTeamSize] = useState<number>(0); // Add state to store Team Size count
-
+  const [totalRevenue, setTotalRevenue] = useState<number>(0);
+  const [totalInvestment, setTotalInvestment] = useState<number>(0);
   const [userAddress, setUserAddress] = useState<string>(staticAddress || '');
   const [userData, setUserData] = useState<{
     id: number;
@@ -60,6 +81,62 @@ const Dashboard: React.FC = () => {
   } | null>(null);
 
   const [error, setError] = useState<string | null>(null);
+  const fetchx3andx4ActiveLevel = async () => {
+    try {
+      const x3ActiveLevelData = await client.query({
+        query: x3ActiveLevel,
+        variables: { user: userWalletAddress },
+      });
+
+      const x4ActiveLevelData = await client.query({
+        query: x4ActiveLevel,
+        variables: { user: userWalletAddress },
+      });
+
+      const x3Levels = [1, ...x3ActiveLevelData.data.upgrades.map((upgrade: { level: number }) => upgrade.level)];
+      const x4Levels = [1, ...x4ActiveLevelData.data.upgrades.map((upgrade: { level: number }) => upgrade.level)];
+
+      console.log('x3ActiveLevelData:', x3Levels);
+      console.log('x4ActiveLevelData:', x4Levels);
+
+      // Calculate total investment
+      const totalInvestment = [...x3Levels, ...x4Levels].reduce((acc, level) => {
+        const levelCost = levels.find(l => l.level === level)?.cost || 0;
+        return acc + levelCost;
+      }, 0);
+
+      console.log('Total Investment:', totalInvestment);
+      setTotalInvestment(totalInvestment);
+    } catch (error) {
+      console.error('Error fetching x3 and x4 active level:', error);
+    }
+  }
+
+  useEffect(() => {
+    fetchx3andx4ActiveLevel();
+  }, [userWalletAddress]);
+
+//ratio calculation 
+  // const ratio = (totalRevenue / totoalinvestment) * 100;
+
+      useEffect(() => {
+        const fetchProfitDataForPrograms = async () => {
+    
+            const x3ProfitData = await fetchProfitDataWithAxios("0xD733B8fDcFaFf240c602203D574c05De12ae358C", 'x3');
+            const x4ProfitData = await fetchProfitDataWithAxios("0xD733B8fDcFaFf240c602203D574c05De12ae358C", 'x4');
+    
+            console.log("x3ProfitData", x3ProfitData); 
+            console.log("x4ProfitData", x4ProfitData);
+
+            setTotalRevenue(x3ProfitData.totalRevenue + x4ProfitData.totalRevenue);
+    
+      
+        };
+    
+        fetchProfitDataForPrograms();
+      }, []);
+    
+      const ratio = (totalRevenue / totalInvestment) * 100;
 
   // Recursive function to fetch all team referrals
   const fetchAllReferrals = async (referrer: string, visited = new Set()): Promise<string[]> => {
@@ -142,8 +219,8 @@ const Dashboard: React.FC = () => {
           value={teamSize.toString()} // Display Team Size count
           increase="↑ 0"
         />
-        <StatCard title="Ratio" value={`2%`} increase="↑ 0%" />
-        <StatCard title="Profits" value={`3`} increase="↑ 0" />
+        <StatCard title="Ratio" value={ratio.toFixed(2) + "%"} increase="↑ 0%" />
+        <StatCard title="Profits" value={String(totalRevenue)} increase="↑ 0" />
       </>
       {error && <div className="text-red-500">{error}</div>}
     </div>
