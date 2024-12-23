@@ -26,6 +26,7 @@
   },
   "include": [
     "next-env.d.ts",
+    "**/*.mdx",
     "additional.d.ts",
     "react-table-config.d.ts",
     "./src/**/*.ts",
