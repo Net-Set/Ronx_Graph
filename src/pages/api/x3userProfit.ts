@@ -17,6 +17,18 @@ const levels = [
     { level: 12, cost: 0.2048 },
 ];
 
+const x3ActiveLevelQuery = gql`
+  query x3ActiveLevel($user: String!) {
+    upgrades(
+      where: { user: $user, matrix: 1 }
+      orderBy: user
+      orderDirection: desc
+    ) {
+      level
+    }
+  }
+`;
+
 const fetchGraphQLData = async (level: number, referrer: string) => {
     const query = gql`
         query($level: Int!, $referrer: String!) {
@@ -28,6 +40,7 @@ const fetchGraphQLData = async (level: number, referrer: string) => {
                 user
                 place
             }
+
             sentExtraEthDividends_collection(
                 where: { receiver: $referrer, matrix: 1, level: $level }
             ) {
@@ -35,13 +48,6 @@ const fetchGraphQLData = async (level: number, referrer: string) => {
                 receiver
                 level
                 matrix
-            }
-            upgrades(
-                where: { user: $referrer, matrix: 1 }
-                orderBy: user
-                orderDirection: desc
-            ) {
-                level
             }
         }
     `;
@@ -53,66 +59,83 @@ const fetchGraphQLData = async (level: number, referrer: string) => {
     return data;
 };
 
-const isActiveLevel = (level: number, upgrades: { level: number }[]): boolean => {
-    return upgrades.some((upgrade) => upgrade.level === level);
+const isLevelActive = async (user: string, level: number): Promise<boolean> => {
+    try {
+        const { data } = await client.query({
+            query: x3ActiveLevelQuery,
+            variables: { user },
+        });
+        return data.upgrades.some((upgrade: { level: number }) => upgrade.level === level);
+    } catch (error) {
+        console.error(`Error checking level ${level}:`, error);
+        return false;
+    }
 };
 
 export default async (req: NextApiRequest, res: NextApiResponse) => {
-    const { level, referrer } = req.query;
+    const { referrer } = req.query;
+    const user = referrer as string;
 
-    if (!level) {
-        return res.status(400).json({ error: 'Level is required' });
+    if (!user || typeof user !== 'string') {
+        return res.status(400).json({ error: 'User is required' });
     }
 
-    if (!referrer) {
+    if (!referrer || typeof referrer !== 'string') {
         return res.status(400).json({ error: 'Referrer is required' });
     }
 
-    const levelNumber = parseInt(level as string, 10);
-    if (isNaN(levelNumber) || levelNumber < 1 || levelNumber > 12) {
-        return res.status(400).json({ error: 'Invalid level' });
-    }
+  
 
     try {
-        const data = await fetchGraphQLData(levelNumber, referrer as string);
-        const newUserPlaces = data.newUserPlaces || [];
-        const sentExtraEthDividends = data.sentExtraEthDividends_collection || [];
-        const upgrades = data.upgrades || [];
+        const activeLevels: number[] = [1]; // Level 1 is default active
 
-        let totalProfit = 0;
-        let extraUsersCount = 0;
+        // Check active levels
+        for (const { level } of levels.slice(1)) {
+            const isActive = await isLevelActive(user, level);
+            if (isActive) activeLevels.push(level);
+        }
 
-        // Always count level 1 as active
-        if (levelNumber === 1) {
-            const cycles = Math.floor(newUserPlaces.length / 3);
-            totalProfit += cycles * levels[levelNumber - 1].cost * 2;
-            extraUsersCount = newUserPlaces.length % 3;
-        } else {
-            const prevLevelActive = isActiveLevel(levelNumber - 1, upgrades);
-            const currentLevelActive = isActiveLevel(levelNumber, upgrades);
+        const levelProfits: { level: number, profit: number }[] = [];
 
-            if (currentLevelActive) {
-                const cycles = Math.floor(newUserPlaces.length / 3);
-                totalProfit += cycles * levels[levelNumber - 1].cost * 2;
-                extraUsersCount = newUserPlaces.length % 3;
-            } else if (prevLevelActive) {
-                const usersToCount = Math.min(newUserPlaces.length, 2);
-                totalProfit += usersToCount * levels[levelNumber - 2].cost;
-                extraUsersCount = newUserPlaces.length - usersToCount;
+        for (const { level, cost } of levels) {
+            const data = await fetchGraphQLData(level, referrer);
+            const newUserPlaces = data.newUserPlaces;
+            const sentExtraEthDividends = data.sentExtraEthDividends_collection;
+
+            let extraDividendsProfit = 0;
+            if (sentExtraEthDividends.length > 0) {
+                extraDividendsProfit = sentExtraEthDividends.length * cost;
             }
+
+            const cycles = Math.floor(newUserPlaces.length / 3);
+            let levelProfit = 0;
+
+            if (!activeLevels.includes(level)) {
+                // If level is not active, consider only the first two users from the previous level
+                const prevLevel = level - 1;
+                if (activeLevels.includes(prevLevel)) {
+                    const previousLevelData = await fetchGraphQLData(prevLevel, referrer);
+                    const prevUsers = previousLevelData.newUserPlaces.slice(0, 2);
+                    levelProfit += prevUsers.length * levels[prevLevel - 1].cost * 2;
+                }
+            } else {
+                // If level is active, calculate full cycles profit
+                for (let i = 0; i < cycles; i++) {
+                    levelProfit += cost * 2;
+                }
+                // Add extra users profit
+                const extraUsers = newUserPlaces.slice(cycles * 3);
+                levelProfit += extraUsers.length * cost;
+            }
+
+            // Add extraDividendsProfit to levelProfit
+            levelProfit += extraDividendsProfit;
+            levelProfits.push({ level, profit: levelProfit });
         }
 
-        // Calculate profit from extra ETH dividends
-        let extraDividendsProfit = 0;
-        if (sentExtraEthDividends.length > 0) {
-            extraDividendsProfit = sentExtraEthDividends.length * levels[levelNumber - 1].cost;
-        }
-
-        totalProfit += extraDividendsProfit;
-
-        res.status(200).json({ levelProfit: totalProfit, extraUsers: extraUsersCount });
+        res.status(200).json({ levelProfits });
     } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error calculating profit:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 };

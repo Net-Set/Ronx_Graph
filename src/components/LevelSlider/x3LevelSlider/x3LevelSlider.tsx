@@ -27,10 +27,11 @@ const levels = [
   { level: 12, cost: 0.2048 },
 ];
 
-const fetchProfitData = async (referrer: string, level: number) => {
-  const response = await fetch(`/api/x3userProfit?referrer=${referrer}&level=${level}`);
+const fetchProfitData = async (referrer: string) => {
+  const response = await fetch(`/api/x3userProfit?referrer=${referrer}`);
   const data = await response.json();
-  return data.levelProfit;
+  console.log('Profit Data:', data);
+  return data;
 };
 
 const LevelSliderx3: React.FC = () => {
@@ -213,18 +214,20 @@ const LevelSliderx3: React.FC = () => {
 
     fetchData();
   }, [staticAddress]);
-
   useEffect(() => {
     const fetchLevelProfits = async () => {
-      const profits = await Promise.all(
-        levels.map(async (level) => {
-          const profit = await fetchProfitData(staticAddress || '',level.level);
-          return profit;
-        })
-      );
+      try {
+        const profitData = await fetchProfitData("0xD733B8fDcFaFf240c602203D574c05De12ae358C");
+        const profits = levels.map((level) => {
+          const levelProfit = profitData.levelProfits.find((p: { level: number; profit: number }) => p.level === level.level);
+          return levelProfit ? levelProfit.profit : 0;
+        });
 
-      setLevelProfits(profits);
-      setTotalRevenue(profits.reduce((acc, profit) => acc + profit, 0));
+        setLevelProfits(profits);
+        setTotalRevenue(profits.reduce((acc, profit) => acc + profit, 0));
+      } catch (error) {
+        console.error('Error fetching level profits:', error);
+      }
     };
 
     fetchLevelProfits();
@@ -303,7 +306,7 @@ const LevelSliderx3: React.FC = () => {
               <div className="mt-4">
                 <div className="flex justify-between items-center">
                 <span>Level {currentLevel} Profit:</span>
-                <span>{levelProfits[currentLevel - 1].toFixed(4)} BUSD</span>
+                <span>{levelProfits[currentLevel - 1] ? levelProfits[currentLevel - 1].toFixed(4) : '0.0000'} BUSD</span>
                 </div>
               </div>
               </div>
