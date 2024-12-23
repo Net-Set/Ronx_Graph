@@ -30,10 +30,11 @@ const levelDataX4 = [
   { level: 12, cost: 0.2048 },
 ];
 
-const fetchProfitData = async (referrer: string, level: number) => {
-  const response = await fetch(`/api/x4userProfit?referrer=${referrer}&level=${level}`);
+const fetchProfitData = async (referrer: string) => {
+  const response = await fetch(`/api/x4userProfit?referrer=${referrer}`);
   const data = await response.json();
-  return data.levelProfit;
+  console.log("Profit Data:", data);
+  return data;
 };
 
 const LevelSliderx4: React.FC = () => {
@@ -177,21 +178,18 @@ const LevelSliderx4: React.FC = () => {
   
     useEffect(() => {
       const fetchLevelProfits = async () => {
-      const profits = await Promise.all(
-        levelDataX4.map(async (level) => {
-        const profit = await fetchProfitData(staticAddress || '', level.level);
-        console.log(`#1Level ${level.level} Profit:`, profit); // Log each level's profit
-        return profit;
-        })
-      );
-    
-      const validProfits = profits.map(profit => isNaN(profit) ? 0 : profit);
-      setLevelProfits(validProfits);
-      setTotalRevenue(validProfits.reduce((acc, profit) => acc + profit, 0));
+        const profits = await fetchProfitData(staticAddress || '');
+        const validProfits = levelDataX4.map((level) => {
+          const levelProfit = profits.levelProfits.find((profit: { level: number }) => profit.level === level.level);
+          return levelProfit ? levelProfit.profit : 0;
+        });
+
+        setLevelProfits(validProfits);
+        setTotalRevenue(validProfits.reduce((acc, profit) => acc + profit, 0));
       };
-    
+
       fetchLevelProfits();
-    }, []);
+    }, [staticAddress, currentLevel]);
 
   const nextLevel = () => {
     setCurrentLevel((prev) => (prev < levelDataX4.length ? prev + 1 : prev));
@@ -264,10 +262,10 @@ const LevelSliderx4: React.FC = () => {
               </div>
               
             </div>
-               <div className="flex justify-center items-center">
+                <div className="flex justify-center items-center">
                 <span className="mr-2">💰</span>
-                {totalRevenue} BUSD
-              </div>
+                {totalRevenue.toFixed(4)} BUSD
+                </div>
 
               {/* Current Level Profit */}
               <div className="mt-4">
