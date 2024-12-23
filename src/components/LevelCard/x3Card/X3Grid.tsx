@@ -30,7 +30,7 @@ const X3Grid: React.FC = () => {
   const staticAddress = walletContext?.walletAddress || '';
   const { getUserIdsWalletaddress } = useSmartContract();
   const searchParams = useSearchParams();
-  const userId = searchParams.get('userId');
+  const userId = searchParams ? searchParams.get('userId') : null;
 
   const [userAddress, setUserAddress] = useState(staticAddress);
   const [cyclesData, setCyclesData] = useState<number[]>([]);
