@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+
 import { useWallet } from '@/app/context/WalletContext';
 import client from '@/lib/apolloClient';
 import { CopyIcon, ExternalLinkIcon } from '@chakra-ui/icons';
@@ -76,6 +77,7 @@ const PartnerPage = () => {
 
   // Function to fetch partner data and their X3/X4 counts
   const fetchPartnerData = async () => {
+
     setLoading(true);
     setError(null);
 
