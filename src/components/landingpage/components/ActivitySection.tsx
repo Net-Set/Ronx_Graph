@@ -78,9 +78,27 @@ const ActivitySection: React.FC = () => {
         );
 
         setActivities(formattedActivities);
+
+        // Cache the data
+        localStorage.setItem('activities', JSON.stringify(formattedActivities));
+        localStorage.setItem('totalUser', totalUsers.toString());
+        localStorage.setItem('totalInvestment', totalInvestment.toString());
       }
     } catch (error) {
       console.error('Error fetching platform activity:', error);
+      // Retry fetching data after a few seconds
+      setTimeout(fetchPlatformActivity, 5000);
+
+      // Load cached data if available
+      const cachedActivities = localStorage.getItem('activities');
+      const cachedTotalUser = localStorage.getItem('totalUser');
+      const cachedTotalInvestment = localStorage.getItem('totalInvestment');
+
+      if (cachedActivities && cachedTotalUser && cachedTotalInvestment) {
+        setActivities(JSON.parse(cachedActivities));
+        setTotalUser(parseInt(cachedTotalUser, 10));
+        setTotalInvestment(parseFloat(cachedTotalInvestment));
+      }
     }
   };
 
