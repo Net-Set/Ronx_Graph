@@ -29,20 +29,7 @@ const levels = [
 ];
 
 
-// const fetchProfitData = async (referrer: string, program: 'x3' | 'x4') => {
-//   const response = await fetch(`/api/${program}userProfit?referrer=${referrer}`);
-//   if (!response.ok) {
-//     console.error(`${program.toUpperCase()} Profit Data Error:`, await response.text());
-//     return { totalRevenue: 0 }; // Return a default value or handle the error appropriately
-//   }
-//   const data = await response.json();
-//   console.log(`${program.toUpperCase()} Profit Data:`, data);
 
-//   // Calculate total revenue from levelProfits
-//   const totalRevenue = data.levelProfits.reduce((acc: number, levelProfit: { profit: number }) => acc + levelProfit.profit, 0);
-
-//   return { totalRevenue };
-// };
 const fetchProfitDataWithAxios = async (referrer: string, program: 'x3' | 'x4') => {
   try {
     const response = await axios.get(`/api/${program}userProfit`, {
@@ -80,24 +67,35 @@ const Program: React.FC = () => {
   const [activeProgram, setActiveProgram] = useState<string | null>(null);
 
 
-    //api data fetch 
+    //api data fetch with caching layer
     useEffect(() => {
       const fetchProfitDataForPrograms = async () => {
-  
-          const x3ProfitData = await fetchProfitDataWithAxios(staticAddress || '', 'x3');
-          const x4ProfitData = await fetchProfitDataWithAxios(staticAddress || '', 'x4');
-  
-          console.log("x3ProfitData", x3ProfitData); 
-          console.log("x4ProfitData", x4ProfitData);
-  
-          setx3TotalRevenue(x3ProfitData.totalRevenue);
-          setx4TotalRevenue(x4ProfitData.totalRevenue);
-  
+      const cacheKeyX3 = 'x3ProfitData';
+      const cacheKeyX4 = 'x4ProfitData';
+
+      const cachedX3ProfitData = localStorage.getItem(cacheKeyX3);
+      const cachedX4ProfitData = localStorage.getItem(cacheKeyX4);
+
+      if (cachedX3ProfitData && cachedX4ProfitData) {
+        setx3TotalRevenue(JSON.parse(cachedX3ProfitData).totalRevenue);
+        setx4TotalRevenue(JSON.parse(cachedX4ProfitData).totalRevenue);
+      } else {
+        const x3ProfitData = await fetchProfitDataWithAxios('0xD733B8fDcFaFf240c602203D574c05De12ae358C', 'x3');
+        const x4ProfitData = await fetchProfitDataWithAxios('0xD733B8fDcFaFf240c602203D574c05De12ae358C', 'x4');
+
+        console.log("x3ProfitData", x3ProfitData); 
+        console.log("x4ProfitData", x4ProfitData);
+
+        setx3TotalRevenue(x3ProfitData.totalRevenue);
+        setx4TotalRevenue(x4ProfitData.totalRevenue);
+
+        localStorage.setItem(cacheKeyX3, JSON.stringify(x3ProfitData));
+        localStorage.setItem(cacheKeyX4, JSON.stringify(x4ProfitData));
+      }
       };
-  
+
       fetchProfitDataForPrograms();
     }, []);
-  
 
   // Fetch active levels from x3ActiveLevel and x4ActiveLevel GraphQL queries
   useEffect(() => {
