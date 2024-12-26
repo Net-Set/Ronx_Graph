@@ -64,7 +64,7 @@ const X3Grid: React.FC = () => {
 
         const activeLevelsResponse = await client.query({
           query: getUserPlacesQuery,
-          variables: { walletAddress: "0x8b0621dB54eA5B96396D08d750081d987b3924df" },
+          variables: { walletAddress: staticAddress },
         });
 
         activeLevelsResponse.data?.upgrades?.forEach(({ level }: { level: number }) => {

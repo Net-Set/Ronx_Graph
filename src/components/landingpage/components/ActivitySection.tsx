@@ -53,7 +53,7 @@ const ActivitySection: React.FC = () => {
           return acc + levelCost;
         }, 0);
 
-        setTotalInvestment(totalInvestment);
+        setTotalInvestment(parseFloat(totalInvestment.toFixed(4)));
 
         const totalUsers = data.registrations.length;
         setTotalUser(totalUsers);
@@ -97,7 +97,7 @@ const ActivitySection: React.FC = () => {
       if (cachedActivities && cachedTotalUser && cachedTotalInvestment) {
         setActivities(JSON.parse(cachedActivities));
         setTotalUser(parseInt(cachedTotalUser, 10));
-        setTotalInvestment(parseFloat(cachedTotalInvestment));
+        setTotalInvestment(parseFloat(parseFloat(cachedTotalInvestment).toFixed(4)));
       }
     }
   };

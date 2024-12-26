@@ -8,6 +8,7 @@ import { GET_DIRECT_REFERRALS } from '@/graphql/GetTeamSize_Through_WalletAddres
 import axios from 'axios';
 import { x3ActiveLevel } from '@/graphql/x3LevelActiveWalletAddress/queries';
 import { x4ActiveLevel } from '@/graphql/x4LevelActiveWalletAddress/queries';
+import SimpleTeamCalculator from '@/components/Team/teamSize';
 
 interface StatCardProps {
   title: string;
@@ -122,14 +123,13 @@ const Dashboard: React.FC = () => {
       useEffect(() => {
         const fetchProfitDataForPrograms = async () => {
     
-            const x3ProfitData = await fetchProfitDataWithAxios("0xD733B8fDcFaFf240c602203D574c05De12ae358C", 'x3');
-            const x4ProfitData = await fetchProfitDataWithAxios("0xD733B8fDcFaFf240c602203D574c05De12ae358C", 'x4');
+            const x3ProfitData = await fetchProfitDataWithAxios(staticAddress || '', 'x3');
+            const x4ProfitData = await fetchProfitDataWithAxios(staticAddress || '', 'x4');
     
             console.log("x3ProfitData", x3ProfitData); 
             console.log("x4ProfitData", x4ProfitData);
 
-            setTotalRevenue(x3ProfitData.totalRevenue + x4ProfitData.totalRevenue);
-    
+            setTotalRevenue(parseFloat((x3ProfitData.totalRevenue + x4ProfitData.totalRevenue).toFixed(4)));
       
         };
     
@@ -139,30 +139,6 @@ const Dashboard: React.FC = () => {
       const ratio = (totalRevenue / totalInvestment) * 100;
 
   // Recursive function to fetch all team referrals
-  const fetchAllReferrals = async (referrer: string, visited = new Set()): Promise<string[]> => {
-    if (visited.has(referrer)) return [];
-    visited.add(referrer);
-
-    try {
-      const { data } = await client.query({
-        query: GET_DIRECT_REFERRALS,
-        variables: { referrer },
-      });
-
-      const directReferrals = data?.registrations?.map((reg: any) => reg.user) || [];
-      console.log(`Direct referrals of ${referrer}:`, directReferrals);
-
-      let teamList = [...directReferrals];
-      for (const referral of directReferrals) {
-        const subTeam = await fetchAllReferrals(referral, visited);
-        teamList = teamList.concat(subTeam);
-      }
-      return teamList;
-    } catch (err) {
-      console.error(`Error fetching referrals for ${referrer}:`, err);
-      return [];
-    }
-  };
 
   // Fetch Total Partner data (Wallet Address passed)
   useEffect(() => {
@@ -179,7 +155,7 @@ const Dashboard: React.FC = () => {
         }
       } catch (error) {
         console.error('Error fetching total partner:', error);
-        setError('Failed to fetch total partner data.');
+        // setError('Failed to fetch total partner data.');
       }
     };
 
@@ -190,20 +166,23 @@ const Dashboard: React.FC = () => {
 
   // Fetch Team Size using recursion
   useEffect(() => {
+    if (!userWalletAddress) return;
+
     const fetchTeamSize = async () => {
+ 
       try {
-        const teamList = await fetchAllReferrals(userWalletAddress || '');
-        console.log('Complete Team List:', teamList);
-        setTeamSize(teamList.length);
-      } catch (err) {
-        console.error('Error fetching team size:', err);
-        setError('Failed to fetch team size data.');
-      }
+        const calculator = new SimpleTeamCalculator();
+        const teamMembers = await calculator.calculateTeamSize(userWalletAddress);
+        setTeamSize(teamMembers.length);
+      } catch (error) {
+        console.error('Error calculating team size:', error);
+        setTeamSize(0);
+      } finally {
+          console.log('team size:', teamSize);
+      } 
     };
 
-    if (userWalletAddress) {
-      fetchTeamSize();
-    }
+    fetchTeamSize();
   }, [userWalletAddress]);
 
   return (

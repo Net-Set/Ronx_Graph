@@ -107,7 +107,7 @@ const Program: React.FC = () => {
 
         const activeLevelsX3 = [1, ...x3Data.upgrades.map((upgrade: { level: number }) => upgrade.level)];
         const activeLevelsX4 = [1, ...x4Data.upgrades.map((upgrade: { level: number }) => upgrade.level)];
-
+        console.log("walletAddress:", userWalletAddress);
         setActiveLevelsX3(activeLevelsX3);
         setActiveLevelsX4(activeLevelsX4);
         setLoading(false);
