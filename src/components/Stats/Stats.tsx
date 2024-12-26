@@ -32,6 +32,12 @@ interface TransactionData {
   wallet: string;
   profit: string;
 }
+interface Filters {
+  program: string;
+  level: string;
+  searchValue: string;
+}
+
 const levels = [
   { level: 1, cost: 0.0001 },
   { level: 2, cost: 0.0002 },
@@ -92,8 +98,10 @@ const COLUMNS: Column<TransactionData>[] = [
           rel="noopener noreferrer"
           className="text-blue-500 hover:text-blue-700 flex items-center"
         >
+
           {value.slice(0, 6) + '.....' + value.slice(-8)}
           <ExternalLinkIcon className="ml-1" />
+
         </a>
         <button
           onClick={() => navigator.clipboard.writeText(value)}
@@ -116,22 +124,16 @@ export default function StatsComponent() {
   const staticAddress = walletAddress ? walletAddress.walletAddress : null;
   const userWalletAddress = staticAddress;
   const [data, setData] = useState<TransactionData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({
+  const [loading, setLoading] = useState<boolean>(true);
+  const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [allData, setAllData] = useState<TransactionData[]>([]);
+  const [filters, setFilters] = useState<Filters>({
     program: '',
     level: '',
     searchValue: ''
   });
-  const [allData, setAllData] = useState<TransactionData[]>([]);
 
-  console.log('filters', filters);
 
-  interface Filters {
-    program: string;
-    level: string;
-    searchValue: string;
-  }
 
   const handleApplyFilters = (newFilters: Filters) => {
     setFilters(newFilters);
@@ -144,8 +146,6 @@ export default function StatsComponent() {
           query: GET_STATS_DATA,
           variables: { walletAddress: userWalletAddress },
         });
-        
-        console.log('data', data);
         // Transform the data to match the required format
         const transformedData = data.newUserPlaces.map((item: any) => ({
           type: item.place === 3 ? (
@@ -160,6 +160,7 @@ export default function StatsComponent() {
           wallet: item.user,
           profit: levels.find(level => level.level === item.level)?.cost || 0,
         }));
+
         setAllData(transformedData);
         setData(transformedData);
         setLoading(false);
@@ -172,6 +173,7 @@ export default function StatsComponent() {
       fetchData();
     }
   }, [userWalletAddress]);
+
 
   useEffect(() => {
     let filteredData = allData;
@@ -217,7 +219,7 @@ export default function StatsComponent() {
       <div className="rounded-tl-lg rounded-tr-lg bg-white px-4 pt-6 dark:bg-light-dark md:px-8 md:pt-8">
         <div className="flex flex-col items-center justify-between border-b border-dashed border-gray-200 pb-5 dark:border-gray-700 md:flex-row">
           <h2 className="mb-3 shrink-0 text-lg font-medium dark:text-green sm:text-xl md:mb-0 md:text-2xl bg-grey-500 text-white p-2 rounded-lg shadow-lg">
-        Stats
+         Stats
           </h2>
           <button
             onClick={() => setShowFilters((prev) => !prev)}

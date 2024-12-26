@@ -54,11 +54,14 @@ const LevelCard: React.FC<LevelCardProps> = ({
   }, [userId, getUserIdsWalletaddress, walletAddress]);
 
 
+  const handleActivate = async () => {
+
     try {
       const provider = new Web3Provider(window.ethereum);
       await provider.send('eth_requestAccounts', []);
       const signer = provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
 
 
      

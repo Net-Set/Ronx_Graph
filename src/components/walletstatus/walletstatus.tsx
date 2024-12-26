@@ -3,20 +3,23 @@
 import { useEffect, useState } from 'react';
 import Web3 from 'web3';
 import { useWallet } from '@/app/context/WalletContext';
-
+import { ConnectIcon } from '@/components/icons/ConnectIcon';
+import { DisconnectIcon } from '@/components/icons/DisconnectedIcon';
+import { BUSD_CONTRACT_ADDRESS } from '@/config/constants';
 declare let window: any;
 
-interface WalletStatusProps {
+interface WalletStatusProps { 
   isConnected: boolean;
   networkConnected: boolean;
   registrationAvailable: boolean;
   balance: {
-    BUSD: number;
+    BUSD: number;   
     BNB: number;
   };
+  approvedBUSD?: boolean;
 }
 
-const BUSD_CONTRACT_ADDRESS = '0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee'; // Replace with your actual BUSD contract address
+// Replace with your actual BUSD contract address
 const BUSD_ABI = [
   {
     constant: true,
@@ -49,6 +52,13 @@ export default function WalletStatus() {
   useEffect(() => {
     if (walletAddress && web3) {
       updateWalletStatus(walletAddress);
+    } else {
+      setWalletStatus({
+        isConnected: false,
+        networkConnected: false,
+        registrationAvailable: false,
+        balance: { BUSD: 0, BNB: 0 },
+      });
     }
   }, [walletAddress, web3]);
 
@@ -65,6 +75,11 @@ export default function WalletStatus() {
         return 'Unknown Network';
     }
   };
+
+  // BlankIcon component
+  const BlankIcon = () => (
+    <div className="w-6 h-6 flex-shrink-0 stroke-current undefined border rounded-full border-line-gray"></div>
+  );
 
   // Fetch wallet status and balances
   const updateWalletStatus = async (address: string) => {
@@ -91,6 +106,7 @@ export default function WalletStatus() {
           BUSD: busdBalance,
           BNB: formattedBNB,
         },
+        approvedBUSD: busdBalance >= 12, // Assuming approval is based on balance for this example
       });
     } catch (error) {
       console.error('Error updating wallet status:', error);
@@ -111,9 +127,10 @@ export default function WalletStatus() {
     }
   };
 
-  // Determine the network color based on the network ID
+  // Determine the network color and icon based on the network ID
   const networkName = getNetworkName(networkId);
-  const networkColor = networkName === 'Unknown Network' ? 'text-red-500' : 'text-green-500';
+  const networkColor = walletStatus.networkConnected ? 'text-green-500' : 'text-red-500';
+  const networkIcon = walletStatus.networkConnected ? <ConnectIcon /> : <DisconnectIcon />;
 
   // UI rendering
   return (
@@ -121,41 +138,181 @@ export default function WalletStatus() {
       <h2 className="mb-6 text-lg font-semibold">Wallet & Network Status</h2>
       <div className="space-y-4">
         {/* Wallet Connection Status */}
-        <div className="flex items-center justify-between">
-          <span>Wallet:</span>
-          <span className={walletStatus.isConnected ? 'text-green-500' : 'text-red-500'}>
-            {walletStatus.isConnected ? 'Connected' : 'Not Connected'}
-          </span>
+        <div className="flex flex-col items-start">
+          <div className="flex transition-all duration-300 ease-in-out">
+            {walletStatus.isConnected ? <ConnectIcon /> : <DisconnectIcon />}
+            <div
+              className={`flex flex-wrap items-center ml-2.5 leading-5 text-base whitespace-nowrap ${
+                walletStatus.isConnected ? "text-green-500" : "text-red-500"
+              }`}
+            >
+              <span className="mr-1.5">
+                <span>Wallet</span>
+                <span>:</span>
+              </span>
+              <span>{walletStatus.isConnected ? "Connected" : "Disconnected"}</span>
+            </div>
+          </div>
         </div>
 
         {/* Network Connection Status */}
-        <div className="flex items-center justify-between">
-          <span>Network:</span>
-          <span className={networkColor}>{networkName}</span>
-        </div>
-
-        {/* Registration Availability */}
-        <div className="flex items-center justify-between">
-          <span>Registration:</span>
-          <span className={walletStatus.registrationAvailable ? 'text-green-500' : 'text-red-500'}>
-            {walletStatus.registrationAvailable ? 'Available' : 'Unavailable'}
-          </span>
-        </div>
-
-        {/* Balance Display */}
-        {walletStatus.isConnected && (
-          <div className="flex items-center justify-between">
-            <span>Balance:</span>
-            <span>
-              {walletStatus.balance.BUSD < 12
-                ? 'Min 12 BUSD required'
-                : `${walletStatus.balance.BUSD.toFixed(2)} BUSD / ${walletStatus.balance.BNB.toFixed(4)} BNB`}
-            </span>
+        <div className="flex flex-col items-start">
+          <div className="flex transition-all duration-300 ease-in-out">
+            {walletStatus.isConnected ? (
+              walletStatus.networkConnected ? (
+                networkIcon
+              ) : (
+                <DisconnectIcon />
+              )
+            ) : (
+              <BlankIcon />
+            )}
+            <div
+              className={`flex flex-wrap items-center ml-2.5 leading-5 text-base whitespace-nowrap ${
+                walletStatus.isConnected
+                  ? walletStatus.networkConnected
+                    ? "text-green-500"
+                    : "text-red-500"
+                  : "text-gray-500"
+              }`}
+            >
+              <span className="mr-1.5">
+                <span>Network</span>
+                <span>:</span>
+              </span>
+              <span>
+                {walletStatus.isConnected
+                  ? walletStatus.networkConnected
+                    ? networkName
+                    : "Disconnected"
+                  : ""}
+              </span>
+            </div>
           </div>
-        )}
+        </div>
+  
+        {/* Registration Availability */}
+        <div className="flex flex-col items-start">
+          <div className="flex transition-all duration-300 ease-in-out">
+            {walletStatus.isConnected && walletStatus.networkConnected ? (
+              walletStatus.registrationAvailable ? (
+                <ConnectIcon />
+              ) : (
+                <DisconnectIcon />
+              )
+            ) : (
+              <BlankIcon />
+            )}
+            <div
+              className={`flex flex-wrap items-center ml-2.5 leading-5 text-base whitespace-nowrap ${
+                walletStatus.isConnected && walletStatus.networkConnected
+                  ? walletStatus.registrationAvailable
+                    ? "text-green-500"
+                    : "text-red-500"
+                  : "text-gray-500"
+              }`}
+            >
+              <span className="mr-1.5">
+                <span>Registration</span>
+                <span>:</span>
+              </span>
+              <span>
+                {walletStatus.isConnected && walletStatus.networkConnected
+                  ? walletStatus.registrationAvailable
+                    ? "Available"
+                    : "Not Available"
+                  : ""}
+              </span>
+            </div>
+          </div>
+        </div>
+  
+        {/* Balance Display */}
+        <div className="flex flex-col items-start">
+          <div className="flex transition-all duration-300 ease-in-out">
+            {walletStatus.isConnected &&
+            walletStatus.networkConnected &&
+            walletStatus.registrationAvailable ? (
+              walletStatus.balance.BUSD >= 12 ? (
+                <ConnectIcon />
+              ) : (
+                <DisconnectIcon />
+              )
+            ) : (
+              <BlankIcon />
+            )}
+            <div
+              className={`flex flex-wrap items-center ml-2.5 leading-5 text-base whitespace-nowrap ${
+                walletStatus.isConnected &&
+                walletStatus.networkConnected &&
+                walletStatus.registrationAvailable
+                  ? walletStatus.balance.BUSD >= 12
+                    ? "text-green-500"
+                    : "text-red-500"
+                  : "text-gray-500"
+              }`}
+            >
+              <span className="mr-1.5">
+                <span>Balance</span>
+                <span>:</span>
+              </span>
+              <span>
+                {walletStatus.isConnected &&
+                walletStatus.networkConnected &&
+                walletStatus.registrationAvailable
+                  ? walletStatus.balance.BUSD >= 12
+                    ? `${walletStatus.balance.BUSD.toFixed(2)} BUSD / ${walletStatus.balance.BNB.toFixed(
+                        4
+                      )} BNB`
+                    : "Insufficient Balance"
+                  : ""}
+              </span>
+            </div>
+          </div>
+        </div>
+  
+        {/* Approved BUSD */}
+        <div className="flex flex-col items-start">
+          <div className="flex transition-all duration-300 ease-in-out">
+            {walletStatus.isConnected &&
+            walletStatus.networkConnected &&
+            walletStatus.registrationAvailable ? (
+              walletStatus.approvedBUSD ? (
+                <ConnectIcon />
+              ) : (
+                <DisconnectIcon />
+              )
+            ) : (
+              <BlankIcon />
+            )}
+            <div
+              className={`flex flex-wrap items-center ml-2.5 leading-5 text-base whitespace-nowrap ${
+                walletStatus.isConnected &&
+                walletStatus.networkConnected &&
+                walletStatus.registrationAvailable
+                  ? walletStatus.approvedBUSD
+                    ? "text-green-500"
+                    : "text-red-500"
+                  : "text-gray-500"
+              }`}
+            >
+              <span className="mr-1.5">
+                <span>Approve BUSD</span>
+                <span>:</span>
+              </span>
+              <span>
+                {walletStatus.isConnected &&
+                walletStatus.networkConnected &&
+                walletStatus.registrationAvailable
+                  ? walletStatus.approvedBUSD
+                    ? "Approved"
+                    : "Not Approved"
+                  : ""}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
-
-     
     </div>
   );
 }

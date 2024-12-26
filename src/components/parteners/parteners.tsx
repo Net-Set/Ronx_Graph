@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import { useWallet } from '@/app/context/WalletContext';
 import client from '@/lib/apolloClient';
 import { CopyIcon, ExternalLinkIcon } from '@chakra-ui/icons';
-import { GET_PARTNER_TABLE, x3_Partner_level_active, x4_Partner_level_active } from '@/graphql/PartnerTable_Through_WalletAddress/queries';
+import { GET_PARTNER_TABLE } from '@/graphql/PartnerTable_Through_WalletAddress/queries';
 import ApplyFilters from '@/components/filters/Fliter';
+import { x3_Partner_level_active } from '@/graphql/PartnerTable_Through_WalletAddress/queries';
+import { x4_Partner_level_active } from '@/graphql/PartnerTable_Through_WalletAddress/queries';
 
 interface Partner {
   id: string;
@@ -15,22 +17,27 @@ interface Partner {
   x3Count: number; // Count for X3 levels
   x4Count: number; // Count for X4 levels
 }
+interface FilterState {
+  program: string;
+  level: string;
+  searchValue: string;
+}
 
 const PartnerPage = () => {
+
   const walletAddress = useWallet(); // Retrieve wallet address from context
   const staticAddress = walletAddress ? walletAddress.walletAddress : null;
-  
   const [partners, setPartners] = useState<Partner[]>([]);
   const [allPartners, setAllPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
-  const [filters, setFilters] = useState({
+  const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [filters, setFilters] = useState<FilterState>({
     program: '',
     level: '',
     searchValue: ''
   });
-  const [showFilters, setShowFilters] = useState(false);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -78,7 +85,7 @@ const PartnerPage = () => {
         query: GET_PARTNER_TABLE,
         variables: { walletAddress: staticAddress },
       });
-      console.log('Partner data:', data);
+
       // Fetch X3/X4 counts for each partner
       const partnerPromises = data?.registrations.map(async (reg: any) => {
         const levels = await fetchPartnerLevels(reg.user);
@@ -125,26 +132,22 @@ const PartnerPage = () => {
 
   return (
     <div className="container mx-auto my-12 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-      <div className='grid grid-cols-2 space-y-4'>
-
-      <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-6">
-        Partner
-      </h2>
-
-      <button
-        onClick={() => setShowFilters((prev) => !prev)}
-        className="ml-auto px-4 py-2  bg-blue-500 text-white rounded hover:bg-blue-700"
+      <div className='grid grid-cols-2 items-center'>
+        <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-6">
+          Partner
+        </h2>
+        <button
+          onClick={() => setShowFilters((prev) => !prev)}
+          className="ml-auto px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
         >
-        {showFilters ? 'Filters' : 'Filters'}
-      </button>
+          {showFilters ? 'Filters' : 'Filters'}
+        </button>
       </div>
-
       {showFilters && (
         <div className="p-4 bg-gray-100 dark:bg-gray-800">
           <ApplyFilters onApplyFilters={handleApplyFilters} />
         </div>
       )}
-
       {loading ? (
         <p className="text-center text-gray-600 dark:text-gray-300">Loading...</p>
       ) : error ? (
@@ -165,7 +168,7 @@ const PartnerPage = () => {
               {partners.map((partner) => (
                 <tr key={partner.id} className="hover:bg-gray-50 dark:hover:bg-gray-600">
                   <td className="px-4 py-3 border-b truncate">{partner.id}</td>
-                  <td className="px-4 py-3 border-b truncate max-w-xs">{partner.wallet} 
+                  <td className="px-4 py-3 border-b truncate max-w-xs">{partner.wallet}
                     <button
                       className="ml-2 text-white px-2 py-1 rounded hover:text-blue-600"
                       onClick={() => copyToClipboard(partner.wallet)}

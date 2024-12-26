@@ -7,27 +7,57 @@ import { GET_ACTIVE_USER } from '@/graphql/GetTotalNumberActive/queries';
 import { ApolloQueryResult } from '@apollo/client';
 import { GET_WALLET_ADDRESS_TO_ID } from '@/graphql/WalletAddress_To_Id/queries';
 
+
+const levels = [
+  { level: 1, cost: 0.0001 },
+  { level: 2, cost: 0.0002 },
+  { level: 3, cost: 0.0004 },
+  { level: 4, cost: 0.0008 },
+  { level: 5, cost: 0.0016 },
+  { level: 6, cost: 0.0032 },
+  { level: 7, cost: 0.0064 },
+  { level: 8, cost: 0.0128 },
+  { level: 9, cost: 0.0256 },
+  { level: 10, cost: 0.0512 },
+  { level: 11, cost: 0.1024 },
+  { level: 12, cost: 0.2048 },
+];
+
+
+
+
 const ActivitySection: React.FC = () => {
   const [totalUser, setTotalUser] = useState(0);
   const [recentUser, setRecentUser] = useState(0);
   const [activities, setActivities] = useState<any[]>([]);
+  const [totalInvestment, setTotalInvestment] = useState(0);
 
   // Fetch platform activity data and format it
   const fetchPlatformActivity = async () => {
     try {
       const { data } = await client.query({ query: GET_USERS }) as ApolloQueryResult<any>;
+
       if (data) {
         const allActivities = [...data.registrations, ...data.upgrades].map((activity: any) => {
           const timestamp = parseInt(activity.blockTimestamp, 10) * 1000;
           return {
             userId: activity.user,
             action: activity.userId ? "Registration" : "Upgrade",
-            matrix: activity.matrix, // Default to "1" if no matrix is provided
-            level: activity.level || "1", // Default to "1" if no level is provided
+            matrix: activity.matrix === 1 ? "x3" : activity.matrix === 2 ? "x4" : "x3 & x4",
+            level: activity.level || "1",
             timestamp,
           };
         });
+        // Calculate total investment from registrations and upgrades
+        const totalInvestment = allActivities.reduce((acc, activity) => {
+          const levelCost = levels.find(level => level.level === parseInt(activity.level, 10))?.cost || 0;
+          return acc + levelCost;
+        }, 0);
 
+        setTotalInvestment(totalInvestment);
+
+        const totalUsers = data.registrations.length;
+        setTotalUser(totalUsers);
         const formattedActivities = await Promise.all(
           allActivities
             .sort((a: any, b: any) => b.timestamp - a.timestamp) // Sort by most recent activity
@@ -55,29 +85,10 @@ const ActivitySection: React.FC = () => {
     }
   };
 
-  // Fetch active user data
-  const fetchActiveUser = async () => {
-    try {
-      const { data } = await client.query({ query: GET_ACTIVE_USER }) as ApolloQueryResult<any>;
-      if (data) {
-        const totalUsers = data.registrations.length;
-        const recentUsers = data.registrations.filter((user: any) => {
-          const currentTime = new Date().getTime();
-          const userTime = new Date(parseInt(user.blockTimestamp, 10) * 1000).getTime();
-          return currentTime - userTime < 24 * 60 * 60 * 1000; // 24 hours
-        }).length;
-
-        setTotalUser(totalUsers);
-        setRecentUser(recentUsers);
-      }
-    } catch (error) {
-      console.error('Error fetching active user:', error);
-    }
-  };
 
   useEffect(() => {
     fetchPlatformActivity();
-    fetchActiveUser();
+
   }, []);
 
   return (
@@ -97,13 +108,13 @@ const ActivitySection: React.FC = () => {
           <div className="bg-black rounded-lg overflow-hidden shadow-lg">
             <div className="overflow-y-auto max-h-96">
               <table className="table-auto w-full text-left text-white">
-                <thead>
-                  <tr className="bg-gray-800">
-                    <th className="px-4 py-2">User ID</th>
-                    <th className="px-4 py-2">Action</th>
-                    <th className="px-4 py-2">Matrix</th>
-                    <th className="px-4 py-2">Level</th>
-                    <th className="px-4 py-2">Time</th>
+                <thead className="sticky top-0 bg-gray-800">
+                  <tr>
+                  <th className="px-4 py-2">User ID</th>
+                  <th className="px-4 py-2">Action</th>
+                  <th className="px-4 py-2">Matrix</th>
+                  <th className="px-4 py-2">Level</th>
+                  <th className="px-4 py-2">Time</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -129,7 +140,7 @@ const ActivitySection: React.FC = () => {
                 <span className="block text-2xl font-bold text-blue-500">{recentUser}</span>
               </div>
               <div className="mb-6 sm:mb-0">
-                <span className="block text-4xl font-bold">22,631</span>
+                <span className="block text-4xl font-bold">{totalInvestment}</span>
                 <span>Total Invested, BNB</span>
               </div>
               <div>
