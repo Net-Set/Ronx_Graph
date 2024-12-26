@@ -24,6 +24,7 @@ interface LevelCardProps {
   partnersCount: number;
   partnersCountlayer2: number;
   isActive: boolean;
+  isOverTake: boolean;  
 }
 
 const LevelCard: React.FC<LevelCardProps> = ({
@@ -34,13 +35,14 @@ const LevelCard: React.FC<LevelCardProps> = ({
   partnersCount,
   partnersCountlayer2,
   isActive,
+  isOverTake
 }) => {
   const router = useRouter();
   const { walletAddress } = useWallet();
   const { getUserIdsWalletaddress,transferTokens } = useSmartContract();
   const searchParams = useSearchParams();
 
-  const userId = searchParams.get('userId');
+  const userId = searchParams ? searchParams.get('userId') : null;
   const [userAddress, setUserAddress] = useState<string>(walletAddress || '');
 
   useEffect(() => {
@@ -108,20 +110,20 @@ const LevelCard: React.FC<LevelCardProps> = ({
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <div
-        className={`relative bg-blue-600 p-4 rounded-lg text-white text-center border border-blue-500 shadow-lg ${
-          isActive ? 'cursor-pointer hover:shadow-xl' : 'cursor-not-allowed opacity-50'
-        } transition-shadow duration-300`}
+        className={`relative p-4 rounded-lg text-white text-center border shadow-lg ${
+          isActive ? 'cursor-pointer hover:shadow-xl' : 'cursor-not-allowed opacity-50' 
+        } ${isOverTake ? 'bg-red-600' : 'bg-blue-600'} transition-shadow duration-300`}
         onClick={isActive ? handleActiveCard : handleActivate}
       >
         {!isActive && (
           <button
-            className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleActivate();
-            }}
+        className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleActivate();
+        }}
           >
-            InActivate
+        InActivate
           </button>
         )}
         <div className="absolute top-2 right-2 text-yellow-300">
@@ -131,14 +133,13 @@ const LevelCard: React.FC<LevelCardProps> = ({
         {renderPartnerCircles()}
         <div className="flex justify-between text-sm mt-6">
           <div className="flex items-center">
-            <FaUsers className="mr-2" /> {partners}
+        <FaUsers className="mr-2" /> {partners}
           </div>
           <div className="flex items-center">
-            <FaSyncAlt className="mr-2" /> {cycles !== null ? cycles : 'Loading...'}
+        <FaSyncAlt className="mr-2" /> {cycles !== null ? cycles : 'Loading...'}
           </div>
         </div>
       </div>
-  
   
         
     </Suspense>

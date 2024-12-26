@@ -33,11 +33,11 @@ const X4Grid: React.FC = () => {
   const [layerOneData, setLayerOneData] = useState<number[]>(Array(levelDataX4.length).fill(0));
   const [layerTwoData, setLayerTwoData] = useState<number[]>(Array(levelDataX4.length).fill(0));
   const [isActiveLevels, setIsActiveLevels] = useState<boolean[]>(Array(levelDataX4.length).fill(false));
-
+  const [isOverTake, setIsOverTake] = useState<boolean[]>(new Array(12).fill(false));
   const [actualPartnersPerLevel, setActualPartnersPerLevel] = useState<number[]>([]);
 
   const searchParams = useSearchParams();
-  const userId = searchParams.get('userId');
+  const userId = searchParams ? searchParams.get('userId') : null;
 
   useEffect(() => {
     const fetchUserAddress = async () => {
@@ -96,6 +96,37 @@ const X4Grid: React.FC = () => {
         const updatedLayerOne = partnerCounts.map((count) => Math.min(count, 2));
         const updatedLayerTwo = partnerCounts.map((count) => Math.max(0, count - 2));
   
+
+        
+        const overtakeStatusCache: { [key: number]: boolean } = {};
+
+        const overtakeStatus = await Promise.all(
+          levelDataX4.map(async (data) => {
+            if (overtakeStatusCache[data.level] !== undefined) {
+              return overtakeStatusCache[data.level];
+            }
+
+            try {
+              const res = await fetch(`/api/overTakex3?referrer=${staticAddress}`);
+
+              if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+              }
+
+              const json = await res.json();
+              console.log("Overtake Status JSON:", json);
+              const isOvertaken = json.message?.some((msg: string) => msg.includes(`Matrix 2, Level ${data.level}`));
+              overtakeStatusCache[data.level] = isOvertaken;
+              console.log("Overtake Status:", isOvertaken);
+              return isOvertaken;
+            } catch (error) {
+              console.error(`Error checking overtake status for level ${data.level}:`, error);
+              return overtakeStatusCache[data.level] || false;
+            }
+          })
+        );
+
+
         setCyclesData(updatedCycles);
         setLayerOneData(updatedLayerOne);
         setLayerTwoData(updatedLayerTwo);
@@ -127,6 +158,11 @@ const X4Grid: React.FC = () => {
           });
           
         setActualPartnersPerLevel(actualPartnersPerLevel);
+            // Merge new overtake status with existing state
+            setIsOverTake((prevState) =>
+              prevState.map((value, index) => overtakeStatus[index] || value)
+            );
+    
   
       } catch (error) {
         console.error("Error fetching level data:", error);
@@ -152,6 +188,7 @@ const X4Grid: React.FC = () => {
                 partnersCount={layerOneData[index]}
                 partnersCountlayer2={layerTwoData[index]}
                 isActive={isActiveLevels[index]}
+                isOverTake={isOverTake[index]}
               />
             ))}
           </div>

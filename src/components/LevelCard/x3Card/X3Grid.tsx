@@ -37,6 +37,7 @@ const X3Grid: React.FC = () => {
   const [partnersData, setPartnersData] = useState<number[]>([]);
   const [reminderData, setReminderData] = useState<number[]>([]);
   const [isLevelActive, setIsLevelActive] = useState<boolean[]>([]);
+  const [isOverTake, setIsOverTake] = useState<boolean[]>(new Array(12).fill(false));
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -63,7 +64,7 @@ const X3Grid: React.FC = () => {
 
         const activeLevelsResponse = await client.query({
           query: getUserPlacesQuery,
-          variables: { walletAddress: userAddress },
+          variables: { walletAddress: "0x8b0621dB54eA5B96396D08d750081d987b3924df" },
         });
 
         activeLevelsResponse.data?.upgrades?.forEach(({ level }: { level: number }) => {
@@ -99,7 +100,6 @@ const X3Grid: React.FC = () => {
           ({ user }: { user: string }) => user
         ) || [];
 
-
         const actualPartnersData = partnersResponses.map((response, index) => {
           const levelPartners = response.data.newUserPlaces.map(
             (partner: { user: string }) => partner.user
@@ -108,14 +108,47 @@ const X3Grid: React.FC = () => {
           const matchingPartners = uniqueLevelPartners.filter((partner: string) =>
             directPartners.includes(partner)
           );
-          console.log(`Level ${index + 1} Actual Partners:`, matchingPartners.length);
           return matchingPartners.length;
         });
-  
+
+        const overtakeStatusCache: { [key: number]: boolean } = {};
+
+        const overtakeStatus = await Promise.all(
+          levelDataX3.map(async (data) => {
+            if (overtakeStatusCache[data.level] !== undefined) {
+              return overtakeStatusCache[data.level];
+            }
+
+            try {
+              const res = await fetch(
+                `/api/overTakex3?referrer=${staticAddress}`
+              );
+
+              if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`);
+              }
+
+                const json = await res.json();
+                const isOvertaken = json.message?.some((msg: string) => msg.includes(`Matrix 1, Level ${data.level}`));
+                overtakeStatusCache[data.level] = isOvertaken;
+                return isOvertaken;
+            } catch (error) {
+              console.error(`Error checking overtake status for level ${data.level}:`, error);
+              return overtakeStatusCache[data.level] || false;
+            }
+          })
+        );
+
         setIsLevelActive(activeLevels);
         setCyclesData(cycleData.map((data) => data.fullCycles));
         setReminderData(cycleData.map((data) => data.remainder));
         setPartnersData(actualPartnersData);
+
+        // Merge new overtake status with existing state
+        setIsOverTake((prevState) =>
+          prevState.map((value, index) => overtakeStatus[index] || value)
+        );
+
         setIsLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -145,6 +178,7 @@ const X3Grid: React.FC = () => {
                 cycles={cyclesData[index]}
                 partnersCount={reminderData[index]}
                 isActive={isLevelActive[index]}
+                isOverTake={isOverTake[index]}
               />
             ))}
           </div>
@@ -154,5 +188,6 @@ const X3Grid: React.FC = () => {
     </div>
   );
 };
+
 
 export default X3Grid;
