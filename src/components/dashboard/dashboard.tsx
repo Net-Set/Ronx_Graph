@@ -155,7 +155,7 @@ const Dashboard: React.FC = () => {
         }
       } catch (error) {
         console.error('Error fetching total partner:', error);
-        // setError('Failed to fetch total partner data.');
+
       }
     };
 
