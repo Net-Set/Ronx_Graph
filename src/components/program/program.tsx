@@ -8,6 +8,7 @@ import client from '@/lib/apolloClient';
 import { x3ActiveLevel } from '@/graphql/x3LevelActiveWalletAddress/queries';
 import { x4ActiveLevel } from '@/graphql/x4LevelActiveWalletAddress/queries';
 import axios from 'axios';
+
 const programs = [
   { name: 'x3', partners: 0, perCycle: '0 BUSD', color: 'bg-main-blue' },
   { name: 'x4', partners: 0, perCycle: '0 BUSD', color: 'bg-purple-500' },
@@ -29,7 +30,20 @@ const levels = [
 ];
 
 
+// const fetchProfitData = async (referrer: string, program: 'x3' | 'x4') => {
+//   const response = await fetch(`/api/${program}userProfit?referrer=${referrer}`);
+//   if (!response.ok) {
+//     console.error(`${program.toUpperCase()} Profit Data Error:`, await response.text());
+//     return { totalRevenue: 0 }; // Return a default value or handle the error appropriately
+//   }
+//   const data = await response.json();
+//   console.log(`${program.toUpperCase()} Profit Data:`, data);
 
+//   // Calculate total revenue from levelProfits
+//   const totalRevenue = data.levelProfits.reduce((acc: number, levelProfit: { profit: number }) => acc + levelProfit.profit, 0);
+
+//   return { totalRevenue };
+// };
 const fetchProfitDataWithAxios = async (referrer: string, program: 'x3' | 'x4') => {
   try {
     const response = await axios.get(`/api/${program}userProfit`, {
@@ -56,8 +70,10 @@ const Program: React.FC = () => {
   // Access the `address` field within the object, or handle undefined
   const staticAddress = walletAddress ? walletAddress.walletAddress : null;
   const userWalletAddress = staticAddress;
+
   const [x3TotalRevenue, setx3TotalRevenue] = useState(0);
   const [x4TotalRevenue, setx4TotalRevenue] = useState(0);
+
 
   console.log("staticAddress: #2", staticAddress);
 
@@ -66,36 +82,24 @@ const Program: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeProgram, setActiveProgram] = useState<string | null>(null);
 
-
-    //api data fetch with caching layer
+    //api data fetch 
     useEffect(() => {
       const fetchProfitDataForPrograms = async () => {
-      const cacheKeyX3 = 'x3ProfitData';
-      const cacheKeyX4 = 'x4ProfitData';
-
-      const cachedX3ProfitData = localStorage.getItem(cacheKeyX3);
-      const cachedX4ProfitData = localStorage.getItem(cacheKeyX4);
-
-      if (cachedX3ProfitData && cachedX4ProfitData) {
-        setx3TotalRevenue(JSON.parse(cachedX3ProfitData).totalRevenue);
-        setx4TotalRevenue(JSON.parse(cachedX4ProfitData).totalRevenue);
-      } else {
-        const x3ProfitData = await fetchProfitDataWithAxios('0xD733B8fDcFaFf240c602203D574c05De12ae358C', 'x3');
-        const x4ProfitData = await fetchProfitDataWithAxios('0xD733B8fDcFaFf240c602203D574c05De12ae358C', 'x4');
-
-        console.log("x3ProfitData", x3ProfitData); 
-        console.log("x4ProfitData", x4ProfitData);
-
-        setx3TotalRevenue(x3ProfitData.totalRevenue);
-        setx4TotalRevenue(x4ProfitData.totalRevenue);
-
-        localStorage.setItem(cacheKeyX3, JSON.stringify(x3ProfitData));
-        localStorage.setItem(cacheKeyX4, JSON.stringify(x4ProfitData));
-      }
+  
+          const x3ProfitData = await fetchProfitDataWithAxios(staticAddress || '', 'x3');
+          const x4ProfitData = await fetchProfitDataWithAxios(staticAddress || '', 'x4');
+  
+          console.log("x3ProfitData", x3ProfitData); 
+          console.log("x4ProfitData", x4ProfitData);
+  
+          setx3TotalRevenue(x3ProfitData.totalRevenue);
+          setx4TotalRevenue(x4ProfitData.totalRevenue);
+  
       };
-
+  
       fetchProfitDataForPrograms();
     }, []);
+  
 
   // Fetch active levels from x3ActiveLevel and x4ActiveLevel GraphQL queries
   useEffect(() => {
@@ -107,7 +111,7 @@ const Program: React.FC = () => {
 
         const activeLevelsX3 = [1, ...x3Data.upgrades.map((upgrade: { level: number }) => upgrade.level)];
         const activeLevelsX4 = [1, ...x4Data.upgrades.map((upgrade: { level: number }) => upgrade.level)];
-        console.log("walletAddress:", userWalletAddress);
+
         setActiveLevelsX3(activeLevelsX3);
         setActiveLevelsX4(activeLevelsX4);
         setLoading(false);
@@ -121,9 +125,6 @@ const Program: React.FC = () => {
       fetchActiveLevels();
     }
   }, [userWalletAddress]);
-
-
-
 
 
   const renderGridItems = (activeLevels: number[], programName: string) => {
@@ -199,8 +200,10 @@ const Program: React.FC = () => {
     <div className="flex flex-col mt-5 items-center rounded-lg bg-gray-100 dark:bg-gray-900 p-3 sm:p-5">
       <div className="container mx-auto p-3 bg-slate-600 rounded-lg dark:bg-gray-800">
         <div className="flex flex-col sm:flex-row gap-8">
+
           {renderProgram(programs[0], activeLevelsX3, x3TotalRevenue)} {/* Replace 0 with actual total revenue for x3 */}
           {renderProgram(programs[1], activeLevelsX4, x4TotalRevenue)} {/* Replace 0 with actual total revenue for x4 */}
+
         </div>
       </div>
     </div>

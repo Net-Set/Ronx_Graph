@@ -7,7 +7,9 @@ import LevelCard from './x4LevelCard';
 import { useWallet } from '@/app/context/WalletContext';
 import client from '@/lib/apolloClient';
 import { getUserPlacesQuery } from '@/graphql/Grixdx4Level_Partner_and_Cycle_Count_and_Active_Level/queries';
+
 import { x4Activelevelpartner, GET_REGISTRATIONS } from "@/graphql/level_Ways_Partner_data_x4/queries";
+
 
 const levelDataX4 = [
   { level: 1, cost: 0.0001 },
@@ -25,6 +27,7 @@ const levelDataX4 = [
 ];
 
 const X4Grid: React.FC = () => {
+
   const  walletAddress  = useWallet();
   const staticAddress = walletAddress ? walletAddress.walletAddress : null;
 
@@ -33,11 +36,11 @@ const X4Grid: React.FC = () => {
   const [layerOneData, setLayerOneData] = useState<number[]>(Array(levelDataX4.length).fill(0));
   const [layerTwoData, setLayerTwoData] = useState<number[]>(Array(levelDataX4.length).fill(0));
   const [isActiveLevels, setIsActiveLevels] = useState<boolean[]>(Array(levelDataX4.length).fill(false));
-  const [isOverTake, setIsOverTake] = useState<boolean[]>(new Array(12).fill(false));
+
   const [actualPartnersPerLevel, setActualPartnersPerLevel] = useState<number[]>([]);
 
   const searchParams = useSearchParams();
-  const userId = searchParams ? searchParams.get('userId') : null;
+  const userId = searchParams.get('userId');
 
   useEffect(() => {
     const fetchUserAddress = async () => {
@@ -45,9 +48,11 @@ const X4Grid: React.FC = () => {
         try {
           const { data } = await client.query({
             query: getUserPlacesQuery,
+
             variables: { staticAddress },
           });
           // setUserAddress(data?.userPlaces?.walletAddress || walletAddress || '');
+
         } catch (error) {
           console.error('Error fetching wallet address:', error);
         }
@@ -62,12 +67,13 @@ const X4Grid: React.FC = () => {
         // Fetch active levels
         const activeLevelsResponse = await client.query({
           query: getUserPlacesQuery,
+
           variables: { walletAddress: staticAddress },
         });
   
         const activeLevels = Array(12).fill(false);
         activeLevels[0] = true; // Ensure level 1 is always active
-  
+
         if (activeLevelsResponse.data?.upgrades) {
           activeLevelsResponse.data.upgrades.forEach((upgrade: { level: number }) => {
             if (upgrade.level >= 1 && upgrade.level <= 12) {
@@ -75,8 +81,10 @@ const X4Grid: React.FC = () => {
             }
           });
         }
+
   
         // Fetch partners data for each level
+
         const partnersResponse = await Promise.all(
           levelDataX4.map((data) =>
             client.query({
@@ -91,47 +99,18 @@ const X4Grid: React.FC = () => {
         );
         console.log("Partner Counts:", partnerCounts);
   
+
         // Calculate cycles and layer data
         const updatedCycles = partnerCounts.map((count) => Math.floor(count / 6));
         const updatedLayerOne = partnerCounts.map((count) => Math.min(count, 2));
         const updatedLayerTwo = partnerCounts.map((count) => Math.max(0, count - 2));
-  
-
-        
-        const overtakeStatusCache: { [key: number]: boolean } = {};
-
-        const overtakeStatus = await Promise.all(
-          levelDataX4.map(async (data) => {
-            if (overtakeStatusCache[data.level] !== undefined) {
-              return overtakeStatusCache[data.level];
-            }
-
-            try {
-              const res = await fetch(`/api/overTakex3?referrer=${staticAddress}`);
-
-              if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-              }
-
-              const json = await res.json();
-              console.log("Overtake Status JSON:", json);
-              const isOvertaken = json.message?.some((msg: string) => msg.includes(`Matrix 2, Level ${data.level}`));
-              overtakeStatusCache[data.level] = isOvertaken;
-              console.log("Overtake Status:", isOvertaken);
-              return isOvertaken;
-            } catch (error) {
-              console.error(`Error checking overtake status for level ${data.level}:`, error);
-              return overtakeStatusCache[data.level] || false;
-            }
-          })
-        );
-
 
         setCyclesData(updatedCycles);
         setLayerOneData(updatedLayerOne);
         setLayerTwoData(updatedLayerTwo);
         setPartnersData(partnerCounts);
         setIsActiveLevels(activeLevels);
+
   
         // Now, let's compare each level's partners to direct partners
         const { data: directPartnersData } = await client.query({
@@ -158,20 +137,17 @@ const X4Grid: React.FC = () => {
           });
           
         setActualPartnersPerLevel(actualPartnersPerLevel);
-            // Merge new overtake status with existing state
-            setIsOverTake((prevState) =>
-              prevState.map((value, index) => overtakeStatus[index] || value)
-            );
-    
-  
+
       } catch (error) {
         console.error("Error fetching level data:", error);
       }
     };
-  
+
     fetchLevelData();
   }, [staticAddress]);
   
+
+        
   return (
     <Suspense fallback={<div className="text-center text-gray-400">Loading levels...</div>}>
       <div className="p-5 min-h-screen text-white">
@@ -188,7 +164,6 @@ const X4Grid: React.FC = () => {
                 partnersCount={layerOneData[index]}
                 partnersCountlayer2={layerTwoData[index]}
                 isActive={isActiveLevels[index]}
-                isOverTake={isOverTake[index]}
               />
             ))}
           </div>

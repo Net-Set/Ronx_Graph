@@ -2,7 +2,7 @@ import Avatar from '@/components/ui/avatar';
 import { StaticImageData } from 'next/image';
 
 type AuthorCardProps = {
-  image: StaticImageData;
+  image: string;
   name?: string;
   role?: string;
 };
@@ -26,7 +26,7 @@ export default function AuthorCard({ image, name, role }: AuthorCardProps) {
           {name}
         </h3>
         <span className="mt-1 block text-xs text-gray-600 dark:text-gray-400">
-          {role}
+          ID: {role}
         </span>
       </div>
     </div>

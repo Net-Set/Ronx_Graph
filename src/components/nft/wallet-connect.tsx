@@ -90,7 +90,7 @@ export default function WalletConnect() {
                 leaveFrom="opacity-100 translate-y-0 absolute z-10"
                 leaveTo="opacity-0 translate-y-4"
               >
-                <Menu.Items className="absolute -right-40 mt-3 w-72 rounded-lg bg-white shadow-large dark:bg-gray-900">
+                <Menu.Items className="absolute -right-32 mt-3 w-72 rounded-lg bg-white shadow-large dark:bg-gray-900">
                   {/* Swap Currency Option */}
                   <Menu.Item>
                     <div

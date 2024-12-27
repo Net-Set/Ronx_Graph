@@ -1,6 +1,13 @@
 
 'use client';
 import { useEffect, useState } from 'react';
+
+// Declare the ethereum property on the window object
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
+}
 import Button from '@/components/ui/button/button';
 import Input from '@/components/ui/forms/input';
 import { useRouter } from 'next/navigation';
@@ -127,6 +134,7 @@ export default function SignUpForm() {
         await tx.wait(); // Wait for the transaction to be mined
 
         alert('Registration successful!');
+
       //      // Static data for user profile creation
       const staticProfileData = {
         newUserId: 1, // Replace with the new user ID
@@ -153,7 +161,7 @@ export default function SignUpForm() {
   
       alert(`Profile created successfully: ${result.message}`);
       console.log("User ID:", result.userId);
-  
+
         router.push('/retro'); // Redirect after successful registration
       } catch (error: any) {
         console.error('Registration failed:', error);
