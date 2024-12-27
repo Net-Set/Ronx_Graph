@@ -19,7 +19,18 @@ const X3Grid: React.FC = () => {
   const { getUserIdsWalletaddress } = useSmartContract();
   const searchParams = useSearchParams();
   const userId = searchParams ? searchParams.get('userId') : null;
-
+  let checkOvertakeStatus: any;
+  useEffect(() => {
+    const fetchCheckOvertakeStatus = async () => {
+      try {
+        const module = await import('@/data/utils/overTakex3');
+        checkOvertakeStatus = module.default;
+      } catch (error) {
+        console.error('Error loading overtake status module:', error);
+      }
+    };
+    fetchCheckOvertakeStatus();
+  }, []);
   const [userAddress, setUserAddress] = useState(staticAddress);
   const [cyclesData, setCyclesData] = useState<number[]>([]);
   const [partnersData, setPartnersData] = useState<number[]>([]);
@@ -108,9 +119,8 @@ const X3Grid: React.FC = () => {
             }
 
             try {
-              const res = await fetch(
-                `/api/overTakex3?referrer=${staticAddress}`
-              );
+       
+                const res = await checkOvertakeStatus(staticAddress);
 
               if (!res.ok) {
                 throw new Error(`HTTP error! status: ${res.status}`);

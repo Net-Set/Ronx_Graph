@@ -21,7 +21,18 @@ const X4Grid: React.FC = () => {
   const [isActiveLevels, setIsActiveLevels] = useState<boolean[]>(Array(levelDataX4.length).fill(false));
   const [isOverTake, setIsOverTake] = useState<boolean[]>(new Array(12).fill(false));
   const [actualPartnersPerLevel, setActualPartnersPerLevel] = useState<number[]>([]);
-
+  let checkOvertakeStatus: any;
+  useEffect(() => {
+    const fetchCheckOvertakeStatus = async () => {
+      try {
+        const module = await import('@/data/utils/overTakex3');
+        checkOvertakeStatus = module.default;
+      } catch (error) {
+        console.error('Error loading overtake status module:', error);
+      }
+    };
+    fetchCheckOvertakeStatus();
+  }, []);
   const searchParams = useSearchParams();
   const userId = searchParams ? searchParams.get('userId') : null;
 
@@ -93,7 +104,7 @@ const X4Grid: React.FC = () => {
             }
 
             try {
-              const res = await fetch(`/api/overTakex3?referrer=${staticAddress}`);
+              const res = await checkOvertakeStatus(staticAddress);
 
               if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
