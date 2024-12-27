@@ -267,7 +267,7 @@ export default function Profile() {
         <input
           type="text"
           id="userid"
-          value={user?.userid || ''}
+          value={user?.userId || ''}
           readOnly
           className="w-full p-2 mt-2 border border-blue-400 rounded-md text-gray-300 bg-blue-800"
         />
