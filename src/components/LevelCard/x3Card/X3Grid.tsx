@@ -9,21 +9,9 @@ import { useWallet } from '@/app/context/WalletContext';
 import client from '@/lib/apolloClient';
 import { getUserPlacesQuery } from '@/graphql/Grixdx3Level_Partner_and_Cycle_Count_and_Active_Level/queries';
 import { x3Activelevelpartner, GET_REGISTRATIONS } from '@/graphql/level_Ways_Partner_data_x3/queries';
+import levelDataX3  from '@/data/levelData/levelDataX3/data';
 
-const levelDataX3 = [
-  { level: 1, cost: 0.0001 },
-  { level: 2, cost: 0.0002 },
-  { level: 3, cost: 0.0004 },
-  { level: 4, cost: 0.0008 },
-  { level: 5, cost: 0.0016 },
-  { level: 6, cost: 0.0032 },
-  { level: 7, cost: 0.0064 },
-  { level: 8, cost: 0.0128 },
-  { level: 9, cost: 0.0256 },
-  { level: 10, cost: 0.0512 },
-  { level: 11, cost: 0.1024 },
-  { level: 12, cost: 0.2048 },
-];
+
 
 const X3Grid: React.FC = () => {
   const walletContext = useWallet();
@@ -38,7 +26,7 @@ const X3Grid: React.FC = () => {
   const [reminderData, setReminderData] = useState<number[]>([]);
   const [isLevelActive, setIsLevelActive] = useState<boolean[]>([]);
   const [isOverTake, setIsOverTake] = useState<boolean[]>(new Array(12).fill(false));
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const fetchUserAddress = async () => {
@@ -64,7 +52,7 @@ const X3Grid: React.FC = () => {
 
         const activeLevelsResponse = await client.query({
           query: getUserPlacesQuery,
-          variables: { walletAddress: "0x8b0621dB54eA5B96396D08d750081d987b3924df" },
+          variables: { walletAddress: staticAddress },
         });
 
         activeLevelsResponse.data?.upgrades?.forEach(({ level }: { level: number }) => {

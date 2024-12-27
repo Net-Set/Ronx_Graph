@@ -1,8 +1,12 @@
 // src/pages/api/overTakex3.ts
 import { NextApiRequest, NextApiResponse } from "next";
+import GET_REGISTRATIONS_AND_MY_LEVELS from "@/graphql/GET_REGISTRATIONS_AND_MY_LEVELS/queries";
+import GET_DOWNLINE_UPGRADES from "@/graphql/GET_DOWNLINE_UPGRADES/queries";
 
-const url = "https://api.studio.thegraph.com/query/98082/test1/version/latest";
-const apiKey = "c06debab9d6ac949da928b1a4cefe090";
+
+
+const url = process.env.GRAPHQL_API_URL || '';
+const apiKey = process.env.GRAPHQL_API_KEY || '';
 
 async function fetchGraphQL(query: string, variables: Record<string, any> = {}) {
   const response = await fetch(url, {
@@ -20,40 +24,6 @@ async function fetchGraphQL(query: string, variables: Record<string, any> = {}) 
   return response.json();
 }
 
-const GET_REGISTRATIONS_AND_MY_LEVELS = `
-  query RegistrationsAndMyLevels($referrer: String!) {
-    registrations(
-      orderBy: blockTimestamp
-      orderDirection: asc
-      where: { referrer: $referrer }
-    ) {
-      user
-      userId
-    }
-    mylevels: upgrades(
-      where: { user: $referrer }
-      orderBy: blockTimestamp
-      orderDirection: asc
-    ) {
-      level
-      matrix
-    }
-  }
-`;
-
-const GET_DOWNLINE_UPGRADES = `
-  query DownlineUpgrades($downlineUsers: [String!]) {
-    upgrades(
-      where: { user_in: $downlineUsers }
-      orderBy: blockTimestamp
-      orderDirection: asc
-    ) {
-      level
-      matrix
-      user
-    }
-  }
-`;
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {

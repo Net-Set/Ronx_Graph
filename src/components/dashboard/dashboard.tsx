@@ -8,7 +8,7 @@ import { GET_DIRECT_REFERRALS } from '@/graphql/GetTeamSize_Through_WalletAddres
 import axios from 'axios';
 import { x3ActiveLevel } from '@/graphql/x3LevelActiveWalletAddress/queries';
 import { x4ActiveLevel } from '@/graphql/x4LevelActiveWalletAddress/queries';
-import SimpleTeamCalculator from '@/components/Team/teamSize';
+import SimpleTeamCalculator from '@/pages/api/teamSize';
 
 interface StatCardProps {
   title: string;

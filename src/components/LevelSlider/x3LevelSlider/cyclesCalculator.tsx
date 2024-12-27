@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-
-const API_URL = "https://api.studio.thegraph.com/query/98082/test1/version/latest";
-const API_KEY = "57a0da610aba88df199b239c85d04a46";
+import GET_USER_PLACES from '@/graphql/GET_USER_PLACES/queries';
+import { CycleDirection } from '@/data/custome_type/custome_type';
+const API_URL = process.env.GRAPHQL_API_URL || '';
+const API_KEY = process.env.GRAPHQL_API_KEY || '';  
 
 interface UserPlace {
   user: string;
@@ -16,7 +17,7 @@ interface Cycle {
 }
 
 const CyclesCalculator: React.FC = () => {
-  const [referrer, setReferrer] = useState("0xD733B8fDcFaFf240c602203D574c05De12ae358C");
+  const [referrer, setReferrer] = useState('');
   const [matrix, setMatrix] = useState(1);
   const [level, setLevel] = useState(1);
   const [cycles, setCycles] = useState<Cycle[][]>([]);
@@ -38,19 +39,6 @@ const CyclesCalculator: React.FC = () => {
     return response.json();
   };
 
-  const GET_USER_PLACES = `
-    query GetUserPlaces($referrer: String!, $matrix: Int!, $level: Int!) {
-      newUserPlaces(
-        where: { referrer: $referrer, matrix: $matrix, level: $level }
-        orderBy: blockTimestamp
-        orderDirection: asc
-      ) {
-        user
-        place
-        referrer
-      }
-    }
-  `;
 
   const calculateCycles = async () => {
     try {
@@ -89,7 +77,7 @@ const CyclesCalculator: React.FC = () => {
     }
   };
 
-  const handleCycleChange = (direction: 'prev' | 'next') => {
+  const handleCycleChange = (direction: CycleDirection) => {
     if (direction === 'prev' && currentCycleIndex > 0) {
       setCurrentCycleIndex(currentCycleIndex - 1);
     } else if (direction === 'next' && currentCycleIndex < cycles.length - 1) {

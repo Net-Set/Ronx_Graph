@@ -42,7 +42,7 @@ const LevelCard: React.FC<LevelCardProps> = ({
   const { getUserIdsWalletaddress,transferTokens } = useSmartContract();
   const searchParams = useSearchParams();
 
-  const userId = searchParams ? searchParams.get('userId') : null;
+  const userId = searchParams ? searchParams.get('userId') : '';
   const [userAddress, setUserAddress] = useState<string>(walletAddress || '');
 
   useEffect(() => {

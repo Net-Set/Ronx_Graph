@@ -1,20 +1,10 @@
 import { NextPage } from 'next';
 import { useState } from 'react';
+import GET_BATCH_REFERRALS from '@/graphql/GET_BATCH_REFERRALS/queries';
+const url = process.env.GRAPHQL_API_URL || '';
+const apiKey = process.env.GRAPHQL_API_KEY || '';
 
-const url = "https://api.studio.thegraph.com/query/98082/test1/version/latest";
-const apiKey = "57a0da610aba88df199b239c85d04a46";
 
-const GET_BATCH_REFERRALS = `
-    query GetBatchReferrals($referrers: [String!]!) {
-        registrations(
-            where: { referrer_in: $referrers }
-            orderBy: user
-        ) {
-            referrer
-            user
-        }
-    }
-`;
 
 class RateLimiter {
   private queue: (() => Promise<any>)[] = [];

@@ -8,21 +8,7 @@ import { useWallet } from '@/app/context/WalletContext';
 import client from '@/lib/apolloClient';
 import { getUserPlacesQuery } from '@/graphql/Grixdx4Level_Partner_and_Cycle_Count_and_Active_Level/queries';
 import { x4Activelevelpartner, GET_REGISTRATIONS } from "@/graphql/level_Ways_Partner_data_x4/queries";
-
-const levelDataX4 = [
-  { level: 1, cost: 0.0001 },
-  { level: 2, cost: 0.0002 },
-  { level: 3, cost: 0.0004 },
-  { level: 4, cost: 0.0008 },
-  { level: 5, cost: 0.0016 },
-  { level: 6, cost: 0.0032 },
-  { level: 7, cost: 0.0064 },
-  { level: 8, cost: 0.0128 },
-  { level: 9, cost: 0.0256 },
-  { level: 10, cost: 0.0512 },
-  { level: 11, cost: 0.1024 },
-  { level: 12, cost: 0.2048 },
-];
+import levelDataX4 from '@/data/levelData/levelDatax4/data';
 
 const X4Grid: React.FC = () => {
   const  walletAddress  = useWallet();
