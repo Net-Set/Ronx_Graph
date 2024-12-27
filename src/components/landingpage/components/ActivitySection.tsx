@@ -7,8 +7,6 @@ import { GET_ACTIVE_USER } from '@/graphql/GetTotalNumberActive/queries';
 import { ApolloQueryResult } from '@apollo/client';
 import { GET_WALLET_ADDRESS_TO_ID } from '@/graphql/WalletAddress_To_Id/queries';
 
-
-
 const levels = [
   { level: 1, cost: 0.0001 },
   { level: 2, cost: 0.0002 },
@@ -24,20 +22,31 @@ const levels = [
   { level: 12, cost: 0.2048 },
 ];
 
-
-
 const ActivitySection: React.FC = () => {
   const [totalUser, setTotalUser] = useState(0);
   const [recentUser, setRecentUser] = useState(0);
   const [activities, setActivities] = useState<any[]>([]);
   const [totalInvestment, setTotalInvestment] = useState(0);
+  const [dataFetched, setDataFetched] = useState(false); // Flag to indicate if data has been fetched
 
   // Fetch platform activity data and format it
   const fetchPlatformActivity = async () => {
     try {
-      const { data } = await client.query({ query: GET_USERS }) as ApolloQueryResult<any>;
-      if (data) {
-        const allActivities = [...data.registrations, ...data.upgrades].map((activity: any) => {
+      // Define all the GraphQL queries as promises
+      const [usersPromise, activeUsersPromise] = [
+        client.query({ query: GET_USERS }),
+        client.query({ query: GET_ACTIVE_USER }),
+      ];
+  
+      // Execute all promises concurrently
+      const [usersResult, activeUsersResult] = await Promise.all([
+        usersPromise,
+        activeUsersPromise,
+      ]) as ApolloQueryResult<any>[];
+  
+      // Process the results of each query
+      if (usersResult.data && activeUsersResult.data) {
+        const allActivities = [...usersResult.data.registrations, ...usersResult.data.upgrades].map((activity: any) => {
           const timestamp = parseInt(activity.blockTimestamp, 10) * 1000;
           return {
             userId: activity.user,
@@ -47,53 +56,59 @@ const ActivitySection: React.FC = () => {
             timestamp,
           };
         });
-        // Calculate total investment from registrations and upgrades
+  
+        // Calculate total investment
         const totalInvestment = allActivities.reduce((acc, activity) => {
           const levelCost = levels.find(level => level.level === parseInt(activity.level, 10))?.cost || 0;
           return acc + levelCost;
         }, 0);
-
+  
+        // Update state variables
         setTotalInvestment(parseFloat(totalInvestment.toFixed(4)));
-
-        const totalUsers = data.registrations.length;
-        setTotalUser(totalUsers);
+        setTotalUser(usersResult.data.registrations.length);
+        setRecentUser(activeUsersResult.data.activeUsers || 0);
+  
+        // Format activity data
         const formattedActivities = await Promise.all(
           allActivities
-            .sort((a: any, b: any) => b.timestamp - a.timestamp) // Sort by most recent activity
+            .sort((a: any, b: any) => b.timestamp - a.timestamp)
             .map(async (activity: any) => {
-              // Fetch wallet address to ID
               const walletData = await client.query({
                 query: GET_WALLET_ADDRESS_TO_ID,
                 variables: { wallet: activity.userId },
               }) as ApolloQueryResult<any>;
-
+  
               const walletId = walletData.data?.registrations?.[0]?.userId || activity.userId;
-
+  
               return {
                 ...activity,
-                userId: walletId, // Update with the wallet ID
+                userId: walletId,
                 timestamp: new Date(activity.timestamp).toLocaleString(),
               };
             })
         );
-
+  
         setActivities(formattedActivities);
-
+  
         // Cache the data
         localStorage.setItem('activities', JSON.stringify(formattedActivities));
-        localStorage.setItem('totalUser', totalUsers.toString());
+        localStorage.setItem('totalUser', usersResult.data.registrations.length.toString());
         localStorage.setItem('totalInvestment', totalInvestment.toString());
+  
+        // Set data fetched flag
+        setDataFetched(true);
       }
     } catch (error) {
       console.error('Error fetching platform activity:', error);
-      // Retry fetching data after a few seconds
+  
+      // Retry fetching data after a delay
       setTimeout(fetchPlatformActivity, 5000);
-
+  
       // Load cached data if available
       const cachedActivities = localStorage.getItem('activities');
       const cachedTotalUser = localStorage.getItem('totalUser');
       const cachedTotalInvestment = localStorage.getItem('totalInvestment');
-
+  
       if (cachedActivities && cachedTotalUser && cachedTotalInvestment) {
         setActivities(JSON.parse(cachedActivities));
         setTotalUser(parseInt(cachedTotalUser, 10));
@@ -101,12 +116,12 @@ const ActivitySection: React.FC = () => {
       }
     }
   };
-
-
+  
   useEffect(() => {
-    fetchPlatformActivity();
-
-  }, []);
+    if (!dataFetched) {
+      fetchPlatformActivity();
+    }
+  }, [dataFetched]);
 
   return (
     <section className="my-6">
@@ -127,11 +142,11 @@ const ActivitySection: React.FC = () => {
               <table className="table-auto w-full text-left text-white">
                 <thead className="sticky top-0 bg-gray-800">
                   <tr>
-                  <th className="px-4 py-2">User ID</th>
-                  <th className="px-4 py-2">Action</th>
-                  <th className="px-4 py-2">Matrix</th>
-                  <th className="px-4 py-2">Level</th>
-                  <th className="px-4 py-2">Time</th>
+                    <th className="px-4 py-2">User ID</th>
+                    <th className="px-4 py-2">Action</th>
+                    <th className="px-4 py-2">Matrix</th>
+                    <th className="px-4 py-2">Level</th>
+                    <th className="px-4 py-2">Time</th>
                   </tr>
                 </thead>
                 <tbody>
