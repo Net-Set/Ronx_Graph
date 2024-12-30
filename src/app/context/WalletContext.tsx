@@ -4,6 +4,8 @@ import { useAccount, useDisconnect, useBalance, useNetwork } from 'wagmi';
 
 interface WalletContextProps {
   walletAddress: string | null;
+  setWalletAddressExternally: (address: string | null) => void;
+
   balance: string | null;
   disconnect: () => void;
   networkId: number | null;
@@ -22,6 +24,10 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [balance, setBalance] = useState<string | null>(null);
   const [networkId, setNetworkId] = useState<number | null>(null);
 
+
+  const setWalletAddressExternally = (address: string | null) => {
+    setWalletAddress(address);
+  };
   useEffect(() => {
     if (isConnected && address) {
       setWalletAddress(address);
@@ -38,6 +44,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     <WalletContext.Provider
       value={{
         walletAddress,
+        setWalletAddressExternally,
         balance,
         disconnect,
         networkId,

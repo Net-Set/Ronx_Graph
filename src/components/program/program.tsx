@@ -89,8 +89,8 @@ const Program: React.FC = () => {
           const x3ProfitData = await fetchProfitDataWithAxios(staticAddress || '', 'x3');
           const x4ProfitData = await fetchProfitDataWithAxios(staticAddress || '', 'x4');
   
-          console.log("x3ProfitData", x3ProfitData); 
-          console.log("x4ProfitData", x4ProfitData);
+          console.log("x3ProfitData", x3ProfitData +""+ staticAddress || ''  ); 
+          console.log("x4ProfitData", x4ProfitData +""+ staticAddress || ''  );
   
           setx3TotalRevenue(x3ProfitData.totalRevenue);
           setx4TotalRevenue(x4ProfitData.totalRevenue);

@@ -19,7 +19,7 @@ import { useAuthor } from '@/app/context/AuthorContext';
 interface User {  
   profilePic: string;
   username: string;
-  userid: string;
+  userId: string;
 }
 
 export default function Sidebar({ className }: { className?: string }) {
@@ -42,7 +42,7 @@ export default function Sidebar({ className }: { className?: string }) {
     if(user!==null){
       setProfileImage(user.profilePic);
       setusername(user.username);
-      setuserids(user.userid);
+      setuserids(user.userId);
     } 
   }, [user]);
 

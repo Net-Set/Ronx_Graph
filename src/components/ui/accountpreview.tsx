@@ -10,10 +10,11 @@ const AccountPreview: React.FC = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
   };
-
   const handlePreviewClick = () => {
-    // Navigate to Retro page
-    router.push('/retro'); // Adjust the path based on your app's structure
+    // Navigate to Retro page with userId as a query parameter
+      if(inputValue){
+    router.push(`/retro?userId=${inputValue}`);
+      }
   };
 
   const handleDemoClick = () => {

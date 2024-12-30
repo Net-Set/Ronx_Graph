@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useWallet } from '@/app/context/WalletContext';
 interface User {
   _id: string;
-  userid: string;
+  userId: string;
   userWalletAddress: string;
   profilePic: string;
   personalLink: string;

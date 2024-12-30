@@ -62,6 +62,9 @@ const Dashboard: React.FC = () => {
   const walletAddress = useWallet();
   const staticAddress = walletAddress ? walletAddress.walletAddress : '';
   const userWalletAddress = staticAddress;
+
+
+  
   console.log('staticAddress #12:', userWalletAddress);
 
   const searchParams = useSearchParams();

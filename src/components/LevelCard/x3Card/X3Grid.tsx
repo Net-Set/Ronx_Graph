@@ -122,16 +122,13 @@ const X3Grid: React.FC = () => {
        
                 const res = await checkOvertakeStatus(staticAddress);
 
-              if (!res.ok) {
-                throw new Error(`HTTP error! status: ${res.status}`);
-              }
+          
 
                 const json = await res.json();
                 const isOvertaken = json.message?.some((msg: string) => msg.includes(`Matrix 1, Level ${data.level}`));
                 overtakeStatusCache[data.level] = isOvertaken;
                 return isOvertaken;
             } catch (error) {
-              console.error(`Error checking overtake status for level ${data.level}:`, error);
               return overtakeStatusCache[data.level] || false;
             }
           })
